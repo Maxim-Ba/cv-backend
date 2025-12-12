@@ -1,0 +1,7 @@
+services:
+  sqlc:
+      image: sqlc/sqlc:latest
+      volumes:
+        - ./:/src
+      working_dir: /src
+      command: generate
