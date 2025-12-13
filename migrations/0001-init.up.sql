@@ -34,11 +34,11 @@ CREATE TABLE
     id BIGINT PRIMARY KEY,
     name TEXT NOT NULL,
     about TEXT NOT NULL,
-    logo JSONB,
+    logo_url JSONB, -- URL к файлу в S3
     period_start DATE NOT NULL,
     period_end DATE,
-    what_i_did JSONB,
-    projects JSONB
+    what_i_did TEXT[],
+    projects TEXT[]
   );
 
 CREATE TABLE

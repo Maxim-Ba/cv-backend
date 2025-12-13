@@ -38,11 +38,11 @@ type WorkHistory struct {
 	ID          int64       `json:"id"`
 	Name        string      `json:"name"`
 	About       string      `json:"about"`
-	Logo        []byte      `json:"logo"`
+	LogoUrl     []byte      `json:"logoUrl"`
 	PeriodStart pgtype.Date `json:"periodStart"`
 	PeriodEnd   pgtype.Date `json:"periodEnd"`
-	WhatIDid    []byte      `json:"whatIDid"`
-	Projects    []byte      `json:"projects"`
+	WhatIDid    []string    `json:"whatIDid"`
+	Projects    []string    `json:"projects"`
 }
 
 type WorkHistoryTechnology struct {
