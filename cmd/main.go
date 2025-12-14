@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -10,6 +11,8 @@ import (
 
 	"github.com/Maxim-Ba/cv-backend/config"
 	"github.com/Maxim-Ba/cv-backend/internal/dbconn"
+	"github.com/Maxim-Ba/cv-backend/internal/router"
+	"github.com/Maxim-Ba/cv-backend/pkg/logger"
 )
 
 func main() {
@@ -21,6 +24,8 @@ func main() {
 	defer cancel()
 
 	cfg := config.GetConfig()
+	fmt.Printf("Config: %+v\n", cfg) 
+	logger.InitLogger(cfg)
 	db, err := dbconn.New(*cfg)
 
 	if err != nil {
@@ -36,12 +41,12 @@ func main() {
 		Handler: router.R,
 		
 	}
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 
-			os.Exit(1)
+			close(exit)
 		}
 	}()
 
@@ -49,6 +54,21 @@ func main() {
 		case <-exit:
 		case <-ctx.Done():
 	}
+	if err := server.Shutdown(context.Background()); err != nil {
+		//TODO log
+		if err := server.Close(); err != nil {
+			//TODO log
+		}
+	}
 //TODO shutdown actions
 	wg.Wait()
+}
+
+
+
+
+func initApplication(ctx context.Context,db *dbconn.DB, cfg *config.Config) (*router.Router, error) {
+	//TODO init other services
+r:= router.New() 
+return  r, nil
 }

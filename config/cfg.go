@@ -9,6 +9,8 @@ type Config struct {
 	PostgresPassword string
 	PostgresDB       string
 	MigrationPath    string
+	LogLevel         string
+	AppEnv           string
 }
 
 var cfg Config
@@ -26,6 +28,8 @@ func init() {
 			PostgresPassword: envs.PostgresPassword,
 			PostgresDB:       envs.PostgresDB,
 			MigrationPath:    envs.MigrationPath,
+			LogLevel:         envs.LogLevel,
+			AppEnv:           envs.AppEnv,
 		}
 	}
 }

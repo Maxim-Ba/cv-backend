@@ -3,8 +3,12 @@ package router
 import (
 	//...
 
+	"log/slog"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
+	m "github.com/Maxim-Ba/cv-backend/internal/middleware"
 )
 
 
@@ -15,7 +19,9 @@ type Router struct {
 
 func New() *Router {
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	logger := &m.StructuredLogger{Logger: slog.Default()}
+    r.Use(middleware.RequestLogger(logger))
+	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 
 	r.Route("/api", func(r chi.Router) {

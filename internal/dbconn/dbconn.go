@@ -21,8 +21,7 @@ type DB struct {
 	db *sql.DB
 }
 
-func New(cfg config.Config) (*DB , error){
-	
+func New(cfg config.Config) (*DB, error) {
 
 	connString := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
@@ -43,17 +42,16 @@ func New(cfg config.Config) (*DB , error){
 	defer cancel()
 
 	if err := db.PingContext(ctx); err != nil {
-	return nil, err
+		return nil, err
 	}
 	checkDerectory(cfg)
 	if err := applyMigrations(db, cfg.MigrationPath); err != nil {
 		return nil, err
 	}
-	
+
 	fmt.Println("Postgres connection created", " host: ", cfg.PostgresHost, " port: ", cfg.PostgresPort)
 	return &DB{db: db}, nil
 }
-
 
 func (db *DB) Close() {
 	db.db.Close()
@@ -66,9 +64,11 @@ func applyMigrations(db *sql.DB, migrationPath string) error {
 	if err != nil {
 		return fmt.Errorf("could not create migration driver: %w", err)
 	}
-
+	
+	sourceURL := "file://migrations"
+	
 	m, err := migrate.NewWithDatabaseInstance(
-		fmt.Sprintf("file://%s", migrationPath),
+		sourceURL,
 		"postgres", driver)
 	if err != nil {
 		return fmt.Errorf("could not create migration instance: %w", err)
@@ -83,23 +83,22 @@ func applyMigrations(db *sql.DB, migrationPath string) error {
 		return fmt.Errorf("could not get migration version: %w", err)
 	}
 
-	fmt.Printf("Migrations applied successfully. Current version: %d, dirty: %v", version, dirty)
+	fmt.Printf("Migrations applied successfully. Current version: %d, dirty: %v\n", version, dirty)
 	slog.Info("Migrations applied successfully")
 	return nil
 }
-func checkDerectory(cfg config.Config){
+func checkDerectory(cfg config.Config) {
 	dir, err := os.Getwd()
-    if err != nil {
-        panic(fmt.Sprintf("failed to get current directory: %v", err))
-    }
-    fmt.Printf("Current working directory: %s\n", dir)
+	if err != nil {
+		panic(fmt.Sprintf("failed to get current directory: %v", err))
+	}
+	fmt.Printf("Current working directory: %s\n", dir)
 
-    // Проверка существования папки миграций
-    migrationPath := cfg.MigrationPath
-    absPath, _ := filepath.Abs(migrationPath)
-    fmt.Printf("Migration path (abs): %s\n", absPath)
+	migrationPath := cfg.MigrationPath
+	absPath, _ := filepath.Abs(migrationPath)
+	fmt.Printf("Migration path (abs): %s\n", absPath)
 
-    if _, err := os.Stat(migrationPath); os.IsNotExist(err) {
-        panic(fmt.Sprintf("migrations directory does not exist: %s", migrationPath))
-    }
+	if _, err := os.Stat(migrationPath); os.IsNotExist(err) {
+		panic(fmt.Sprintf("migrations directory does not exist: %s", migrationPath))
+	}
 }
