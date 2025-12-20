@@ -1,10 +1,11 @@
 services:
   sqlc:
-      image: sqlc/sqlc:latest
-      volumes:
-        - ./:/src
-      working_dir: /src
-      command: generate
+    image: sqlc/sqlc:latest
+    volumes:
+      - ./:/src
+    working_dir: /src
+    command: generate
+  
   postgres:
     container_name: postgres
     image: postgres:latest
@@ -21,6 +22,39 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - app-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go-app
+    volumes:
+      - ./:/app:delegated,cached
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
+    working_dir: /app
+    ports:
+      - "3333:3333"     
+      - "2345:2345"     # debug port
+    environment:
+      - AIR_WORKDIR=/app
+      - AIR_TMPDIR=/app/tmp
+      - SERVER_ADDRESS=0.0.0.0:3333
+      - POSTGRES_HOST=postgres
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
 
 volumes:
   postgres-data:
+  go-mod-cache:
+  go-build-cache:
+
+networks:
+  app-network:
+    driver: bridge

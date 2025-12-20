@@ -1,9 +1,16 @@
 package router
 
-import "net/http"
+import (
+	"log/slog"
+	"net/http"
+)
 
 func TagGet(w http.ResponseWriter, r *http.Request)  {}
-func TagList(w http.ResponseWriter, r *http.Request) {}
+func TagList(w http.ResponseWriter, r *http.Request) {
+	slog.Info("TagList3",)
+	w.Write([]byte("TagList34"))
+
+}
 
 func TagCreate(w http.ResponseWriter, r *http.Request) {}
 

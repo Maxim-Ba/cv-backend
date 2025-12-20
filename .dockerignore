@@ -1,0 +1,13 @@
+.git
+.gitignore
+vendor/
+tmp/
+testdata/
+*.log
+.DS_Store
+.air.toml
+.air.debug.toml
+docker-compose.yml
+Dockerfile
+.vscode/
+.env

@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -29,11 +31,11 @@ func main() {
 	db, err := dbconn.New(*cfg)
 
 	if err != nil {
-		panic(err.Error())
+		log.Panicf("%v", err)
 	}
 	router, err := initApplication(ctx,db, cfg)
 	if err != nil {
-		panic(err.Error())
+		log.Panicf("%v", err)
 	}
 	var wg sync.WaitGroup
 	server := &http.Server{
@@ -41,11 +43,11 @@ func main() {
 		Handler: router.R,
 		
 	}
+	
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-
 			close(exit)
 		}
 	}()
@@ -57,7 +59,8 @@ func main() {
 	if err := server.Shutdown(context.Background()); err != nil {
 		//TODO log
 		if err := server.Close(); err != nil {
-			//TODO log
+			slog.Error(err.Error())
+		
 		}
 	}
 //TODO shutdown actions

@@ -23,7 +23,6 @@ func (l *StructuredLogger) NewLogEntry(r *http.Request) middleware.LogEntry {
 
 	// handler := l.Logger.Handler()
 
-	// Создаем запись лога с полями запроса
 	attrs := []slog.Attr{
 		slog.String("http_scheme", scheme),
 		slog.String("http_proto", r.Proto),
