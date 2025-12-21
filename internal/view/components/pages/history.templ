@@ -1,0 +1,14 @@
+package pages
+
+import (
+    "github.com/Maxim-Ba/cv-backend/internal/view/components/layout"
+)
+
+templ HistoryPage(user string) {
+    @layout.Base("History", historyPage(user), user)
+}
+
+templ historyPage(user string) {
+   <h1>History</h1>
+    
+}

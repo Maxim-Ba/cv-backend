@@ -1,0 +1,14 @@
+package pages
+
+import (
+    "github.com/Maxim-Ba/cv-backend/internal/view/components/layout"
+)
+
+templ TagPage(user string) {
+    @layout.Base("Tag", tagPage(user), user)
+}
+
+templ tagPage(user string) {
+   <h1>Tag</h1>
+    
+}

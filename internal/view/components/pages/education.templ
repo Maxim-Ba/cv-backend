@@ -1,0 +1,14 @@
+package pages
+
+import (
+    "github.com/Maxim-Ba/cv-backend/internal/view/components/layout"
+)
+
+templ EducationPage(user string) {
+    @layout.Base("Education", educationPage(user), user)
+}
+
+templ educationPage(user string) {
+   <h1>Education</h1>
+    
+}

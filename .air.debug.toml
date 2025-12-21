@@ -15,7 +15,7 @@ tmp_dir = "./tmp"
   follow_symlink = false
   full_bin = "dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient  exec ./tmp/main -- --port=3333"
   include_dir = []
-  include_ext = ["go", "tpl", "tmpl", "html"]
+  include_ext = ["go", "tpl", "tmpl", "html", "templ"]
   include_file = []
   kill_delay = "0s"
   log = "build-errors.log"

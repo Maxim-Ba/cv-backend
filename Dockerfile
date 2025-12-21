@@ -1,7 +1,8 @@
 FROM golang:1.25-alpine
 
 RUN go install github.com/air-verse/air@latest && \
-    go install github.com/go-delve/delve/cmd/dlv@latest
+  go install github.com/go-delve/delve/cmd/dlv@latest \
+  go install github.com/a-h/templ/cmd/templ@latest
 
 RUN apk add --no-cache git gcc musl-dev
 

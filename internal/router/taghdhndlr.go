@@ -5,10 +5,11 @@ import (
 	"net/http"
 )
 
+
 func TagGet(w http.ResponseWriter, r *http.Request)  {}
 func TagList(w http.ResponseWriter, r *http.Request) {
-	slog.Info("TagList3",)
-	w.Write([]byte("TagList34"))
+	slog.Info("TagList4",)
+	w.Write([]byte("TagList"))
 
 }
 
