@@ -12,10 +12,12 @@ import (
 	m "github.com/Maxim-Ba/cv-backend/internal/middleware"
 	"github.com/Maxim-Ba/cv-backend/internal/services"
 	"github.com/Maxim-Ba/cv-backend/internal/view/components/pages"
+	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
 type Router struct {
 	R         *chi.Mux
+	Deps *Dependencies
 }
 
 type Dependencies struct {
@@ -31,6 +33,8 @@ func New(deps *Dependencies ) *Router {
 
 	router := &Router{
 		R:         r,
+		Deps: deps,
+
 	}
 
 	h:= createHandlers(deps)
@@ -121,13 +125,20 @@ func (rt *Router) admiHistory(w http.ResponseWriter, r *http.Request) {
 
 func (rt *Router) adminTech(w http.ResponseWriter, r *http.Request) {
     user := "Администратор"
-    component := pages.TechPage(user)
+		
+    component := pages.TechPage(user, )
     component.Render(r.Context(), w)
 }
 
 func (rt *Router) adminTags(w http.ResponseWriter, r *http.Request) {
     user := "Администратор"
-    component := pages.TagPage(user)
+		queryParams := r.URL.Query()
+		pagebleRq := entityreqdecorator.ParseQueryParams(queryParams)
+		tagsResult, err := rt.Deps.TagService.List(pagebleRq)
+		if err!=nil {
+			slog.Error(err.Error())
+		}
+    component := pages.TagPage(user, tagsResult)
     component.Render(r.Context(), w)
 }
 

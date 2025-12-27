@@ -1,14 +1,23 @@
 package pages
 
-import (
-    "github.com/Maxim-Ba/cv-backend/internal/view/components/layout"
-)
+import "github.com/Maxim-Ba/cv-backend/internal/view/components/layout"
+import "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
+import "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 
-templ TagPage(user string) {
-    @layout.Base("Tag", tagPage(user), user)
+templ TagPage(user string, tagsResult entityreqdecorator.PagebleRs[models.Tag]) {
+	@layout.Base("Tag", tagPage(user, tagsResult), user)
 }
 
-templ tagPage(user string) {
-   <h1>Tag</h1>
-    
+templ tagPage(user string, tagsResult entityreqdecorator.PagebleRs[models.Tag]) {
+	<h1>Tag</h1>
+	<div>
+		for i, tag := range tagsResult.Content {
+			<div class="flex">
+				<div>{ i + 1 }</div>
+				<div>{ tag.Name }</div>
+				<div>{ tag.HexColor }</div>
+			</div>
+		}
+		Page: { tagsResult.Page }, Total: { tagsResult.Total }, Size: { tagsResult.Size }
+	</div>
 }

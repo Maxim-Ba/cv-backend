@@ -1,4 +1,3 @@
-// querybuilder.go
 package entityreqdecorator
 
 import (

@@ -1,6 +1,8 @@
 package services
 
 import (
+	"fmt"
+
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
@@ -56,17 +58,12 @@ func (s *TagService) Delete(id int64) (int64, error) {
 }
 
 func (s *TagService) List(r entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[models.Tag], error) {
-	if r.Page == 0 {
-		return entityreqdecorator.PagebleRs[models.Tag]{}, nil
-	}
-	if r.Size == 0 {
-		return entityreqdecorator.PagebleRs[models.Tag]{}, nil
-	}
+
 
 	res, err := s.repo.List(r)
 
 	if err != nil {
-		return entityreqdecorator.PagebleRs[models.Tag]{}, err
+		return entityreqdecorator.PagebleRs[models.Tag]{}, fmt.Errorf("error in getting list from tag repo %w ", err)
 	}
 
 	return res, nil

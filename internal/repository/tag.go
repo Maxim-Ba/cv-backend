@@ -27,7 +27,7 @@ func (t *TagRepo) Get(id int64) (models.Tag, error) {
 	return models.Tag{}, nil
 }
 func (t *TagRepo) List(req entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[models.Tag], error) {
-	baseQuery := "SELECT id, name, hex_color FROM tags"
+	baseQuery := "SELECT id, name, hex_color FROM tag"
 
 	queryParams := entityreqdecorator.BuildListQuery(
 		req, baseQuery, t.isValidField,
