@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	m "github.com/Maxim-Ba/cv-backend/internal/middleware"
+	"github.com/Maxim-Ba/cv-backend/internal/services"
 	"github.com/Maxim-Ba/cv-backend/internal/view/components/pages"
 )
 
@@ -17,7 +18,11 @@ type Router struct {
 	R         *chi.Mux
 }
 
-func New() *Router {
+type Dependencies struct {
+	TagService *services.TagService
+}
+
+func New(deps *Dependencies ) *Router {
 	r := chi.NewRouter()
 	logger := &m.StructuredLogger{Logger: slog.Default()}
 	r.Use(middleware.RequestLogger(logger))
@@ -28,6 +33,7 @@ func New() *Router {
 		R:         r,
 	}
 
+	h:= createHandlers(deps)
 
 	fs := http.FileServer(http.Dir("internal/view/static"))
 	r.Handle("/static/*", http.StripPrefix("/static/", fs))
@@ -44,11 +50,11 @@ func New() *Router {
 
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/tag", func(r chi.Router) {
-			r.Get("/{tagID}", TagGet)
-			r.Get("/", TagList)
-			r.Post("/", TagCreate)
-			r.Delete("/", TagDelete)
-			r.Put("/", TagUpdate)
+			r.Get("/{tagID}", h.TagHandler.TagGet)
+			r.Get("/", h.TagHandler.TagList)
+			r.Post("/", h.TagHandler.TagCreate)
+			r.Delete("/", h.TagHandler.TagDelete)
+			r.Put("/", h.TagHandler.TagUpdate)
 		})
 		//
 		r.Route("/tech", func(r chi.Router) {
@@ -68,11 +74,11 @@ func New() *Router {
 		})
 		//
 		r.Route("/edu", func(r chi.Router) {
-			r.Get("/{eduID}", RducationGet)
-			r.Get("/", RducationList)
-			r.Post("/", RducationCreate)
-			r.Delete("/", RducationDelete)
-			r.Put("/", RducationUpdate)
+			r.Get("/{eduID}", EducationGet)
+			r.Get("/", EducationList)
+			r.Post("/", EducationCreate)
+			r.Delete("/", EducationDelete)
+			r.Put("/", EducationUpdate)
 		})
 		//
 		r.Route("/fb", func(r chi.Router) {
@@ -84,6 +90,16 @@ func New() *Router {
 	})
 
 	return router
+}
+	type handlers struct {
+		TagHandler *TagHandler
+	}
+func createHandlers(deps *Dependencies) *handlers {
+
+	tagHandler := NewTagHandler( *deps.TagService )
+	return &handlers{
+		TagHandler: tagHandler,
+	}
 }
 
 

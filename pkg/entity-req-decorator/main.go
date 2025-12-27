@@ -3,68 +3,68 @@ package entityreqdecorator
 import "strings"
 
 type SortBy struct {
-	Field string
-	//ASC, DESC
-	Order string
+	Field string `json:"field"`
+	Order string `json:"order"` // ASC, DESC
 }
 
 type PagebleRq struct {
-	Page   int
+	Page   int 
 	Size   int
-	Sort   []SortBy
+	Sort   []SortBy 
 	Filter map[string]SQLGenerator
 }
 
 type PagebleRs[T any] struct {
-	Total   int
-	Content []T
-	Page    int
-	Size    int
-	Sort    []SortBy
+	Total   int      `json:"total,omitempty"`
+	Content []T      `json:"content"`
+	Page    int      `json:"page,omitempty"`
+	Size    int      `json:"size,omitempty"`
+	Sort    []SortBy `json:"sort,omitempty"`
 }
 
 type SQLGenerator interface {
 	GenerateSQL() string
 }
 type FieldSetter interface {
-    SetField(field string)
+	SetField(field string)
 }
 
 func init() {
-    predicatByStruct = map[string]func(raw string) SQLGenerator{
-        "": func(raw string) SQLGenerator {
-            return &PredicateEQ{Predicate: Predicate{Value: raw}}
-        },
-        "eq": func(raw string) SQLGenerator {
-            return &PredicateEQ{Predicate: Predicate{Value: raw}}
-        },
-        "like": func(raw string) SQLGenerator {
-            return &PredicateLike{Predicate: Predicate{Value: raw}}
-        },
-        "gt": func(raw string) SQLGenerator {
-            return &PredicateGT{Predicate: Predicate{Value: raw}}
-        },
-        "lt": func(raw string) SQLGenerator {
-            return &PredicateLT{Predicate: Predicate{Value: raw}}
-        },
-        "gte": func(raw string) SQLGenerator {
-            return &PredicateGTE{Predicate: Predicate{Value: raw}}
-        },
-        "lte": func(raw string) SQLGenerator {
-            return &PredicateLTE{Predicate: Predicate{Value: raw}}
-        },
-        "ne": func(raw string) SQLGenerator {
-            return &PredicateNE{Predicate: Predicate{Value: raw}}
-        },
-				// "anf": func(raw string) SQLGenerator {
-				// 	return &PredicateANF{
-				// 		predicate: predicate{
-				// 			InnerPredicate: parseANF(raw),
-				// 		},
-				// 	}
-				// },
-    }
+	predicatByStruct = map[string]func(raw string) SQLGenerator{
+		"": func(raw string) SQLGenerator {
+			return &PredicateEQ{Predicate: Predicate{Value: raw}}
+		},
+		"eq": func(raw string) SQLGenerator {
+			return &PredicateEQ{Predicate: Predicate{Value: raw}}
+		},
+		"like": func(raw string) SQLGenerator {
+			return &PredicateLike{Predicate: Predicate{Value: raw}}
+		},
+		"gt": func(raw string) SQLGenerator {
+			return &PredicateGT{Predicate: Predicate{Value: raw}}
+		},
+		"lt": func(raw string) SQLGenerator {
+			return &PredicateLT{Predicate: Predicate{Value: raw}}
+		},
+		"gte": func(raw string) SQLGenerator {
+			return &PredicateGTE{Predicate: Predicate{Value: raw}}
+		},
+		"lte": func(raw string) SQLGenerator {
+			return &PredicateLTE{Predicate: Predicate{Value: raw}}
+		},
+		"ne": func(raw string) SQLGenerator {
+			return &PredicateNE{Predicate: Predicate{Value: raw}}
+		},
+		// "anf": func(raw string) SQLGenerator {
+		// 	return &PredicateANF{
+		// 		predicate: predicate{
+		// 			InnerPredicate: parseANF(raw),
+		// 		},
+		// 	}
+		// },
+	}
 }
+
 var predicatByStruct = map[string]func(raw string) SQLGenerator{
 	"": func(raw string) SQLGenerator {
 		if raw == "" {
@@ -76,7 +76,6 @@ var predicatByStruct = map[string]func(raw string) SQLGenerator{
 			},
 		}
 	},
-	
 }
 
 type Predicate struct {

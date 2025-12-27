@@ -12,7 +12,7 @@ const (
 
 func ParseQueryParams(queryParams map[string][]string) PagebleRq {
 	req := PagebleRq{
-		Page:   PAGE, 
+		Page:   PAGE,
 		Size:   SIZE,
 		Sort:   []SortBy{},
 		Filter: make(map[string]SQLGenerator),
@@ -82,19 +82,13 @@ func parsePredicate(field, value string) SQLGenerator {
 
 	operator, innerValue := extractOperator(value)
 
-	if creator, ok := predicatByStruct[operator]; ok {
-		pred := creator(innerValue)
-		if p, ok := pred.(interface{ SetField(string) }); ok {
-			p.SetField(field)
-		}
-		return pred
-	}
-
 	switch operator {
-		// TODO or predicate
+	// TODO or predicate
+	case "like":
+		return &PredicateLike{Predicate: Predicate{Value: innerValue, Field: field}}
 	case "anf":
-		// anf(gt(20),lt(30)) - AND 
-		predicates := parseANF(innerValue)
+		// anf(gt(20),lt(30)) - AND
+		predicates := parseANF(innerValue, field)
 		return &PredicateANF{
 			Predicate: Predicate{
 				Field:          field,
@@ -146,99 +140,100 @@ func parsePredicate(field, value string) SQLGenerator {
 	}
 }
 func extractOperator(s string) (string, string) {
-    openParen := strings.Index(s, "(")
-    if openParen == -1 {
-        return "", s
-    }
-    
-    operator := strings.TrimSpace(s[:openParen])
-    inner := s[openParen+1 : len(s)-1] // убираем внешние скобки
-    
-    return operator, inner
+	openParen := strings.Index(s, "(")
+	if openParen == -1 {
+		return "", s
+	}
+
+	operator := strings.TrimSpace(s[:openParen])
+	inner := s[openParen+1 : len(s)-1] // убираем внешние скобки
+
+	return operator, inner
 }
-func parseANF(s string) []SQLGenerator {
-    var predicates []SQLGenerator
-    parts := splitByCommaOutsideParens(s)
-    
-    for _, part := range parts {
-        part = strings.TrimSpace(part)
-        if part == "" {
-            continue
-        }
-        
-        operator, innerValue := extractOperator(part)
-        
-        switch operator {
-        case "gt":
-            predicates = append(predicates, &PredicateGT{
-                Predicate: Predicate{
-                    Value: innerValue,
-                },
-            })
-        case "lt":
-            predicates = append(predicates, &PredicateLT{
-                Predicate: Predicate{
-                    Value: innerValue,
-                },
-            })
-        case "gte":
-            predicates = append(predicates, &PredicateGTE{
-                Predicate: Predicate{
-                    Value: innerValue,
-                },
-            })
-        case "lte":
-            predicates = append(predicates, &PredicateLTE{
-                Predicate: Predicate{
-                    Value: innerValue,
-                },
-            })
-        case "eq":
-            predicates = append(predicates, &PredicateEQ{
-                Predicate: Predicate{
-                    Value: innerValue,
-                },
-            })
-        case "like":
-            predicates = append(predicates, &PredicateLike{
-                Predicate: Predicate{
-                    Value: innerValue,
-                },
-            })
-        }
-    }
-    
-    return predicates
+func parseANF(s, field string) []SQLGenerator {
+	var predicates []SQLGenerator
+	parts := splitByCommaOutsideParens(s)
+
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+
+		operator, innerValue := extractOperator(part)
+
+		switch operator {
+		case "gt":
+			predicates = append(predicates, &PredicateGT{
+				Predicate: Predicate{
+					Value: innerValue,
+					Field: field,
+				},
+			})
+		case "lt":
+			predicates = append(predicates, &PredicateLT{
+				Predicate: Predicate{
+					Value: innerValue, Field: field,
+				},
+			})
+		case "gte":
+			predicates = append(predicates, &PredicateGTE{
+				Predicate: Predicate{
+					Value: innerValue, Field: field,
+				},
+			})
+		case "lte":
+			predicates = append(predicates, &PredicateLTE{
+				Predicate: Predicate{
+					Value: innerValue, Field: field,
+				},
+			})
+		case "eq":
+			predicates = append(predicates, &PredicateEQ{
+				Predicate: Predicate{
+					Value: innerValue, Field: field,
+				},
+			})
+		case "like":
+			predicates = append(predicates, &PredicateLike{
+				Predicate: Predicate{
+					Value: innerValue, Field: field,
+				},
+			})
+		}
+	}
+
+	return predicates
 }
 
 func splitByCommaOutsideParens(s string) []string {
-    var result []string
-    var current strings.Builder
-    parenDepth := 0
-    
-    for _, r := range s {
-        switch r {
-        case '(':
-            parenDepth++
-            current.WriteRune(r)
-        case ')':
-            parenDepth--
-            current.WriteRune(r)
-        case ',':
-            if parenDepth == 0 {
-                result = append(result, current.String())
-                current.Reset()
-            } else {
-                current.WriteRune(r)
-            }
-        default:
-            current.WriteRune(r)
-        }
-    }
-    
-    if current.Len() > 0 {
-        result = append(result, current.String())
-    }
-    
-    return result
+	var result []string
+	var current strings.Builder
+	parenDepth := 0
+
+	for _, r := range s {
+		switch r {
+		case '(':
+			parenDepth++
+			current.WriteRune(r)
+		case ')':
+			parenDepth--
+			current.WriteRune(r)
+		case ',':
+			if parenDepth == 0 {
+				result = append(result, current.String())
+				current.Reset()
+			} else {
+				current.WriteRune(r)
+			}
+		default:
+			current.WriteRune(r)
+		}
+	}
+
+	if current.Len() > 0 {
+		result = append(result, current.String())
+	}
+
+	return result
 }

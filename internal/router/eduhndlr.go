@@ -1,12 +1,30 @@
 package router
 
-import "net/http"
+import (
+	"net/http"
 
-func RducationGet(w http.ResponseWriter, r *http.Request)  {}
-func RducationList(w http.ResponseWriter, r *http.Request) {}
+	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
+	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
+)
 
-func RducationCreate(w http.ResponseWriter, r *http.Request) {}
+type EducationDeleter interface {
+	DeleteList([]int64) ([]int64, error)
+	Delete() (int64, error)
+}
+type EducationWriter interface {
+	Create() (models.Education, error)
+	Update() (models.Education, error)
+}
 
-func RducationDelete(w http.ResponseWriter, r *http.Request) {}
+type EducationReader interface {
+	Get() (models.Education, error)
+	List() (entityreqdecorator.PagebleRs[models.Education], error)
+}
+func EducationGet(w http.ResponseWriter, r *http.Request)  {}
+func EducationList(w http.ResponseWriter, r *http.Request) {}
 
-func RducationUpdate(w http.ResponseWriter, r *http.Request) {}
+func EducationCreate(w http.ResponseWriter, r *http.Request) {}
+
+func EducationDelete(w http.ResponseWriter, r *http.Request) {}
+
+func EducationUpdate(w http.ResponseWriter, r *http.Request) {}
