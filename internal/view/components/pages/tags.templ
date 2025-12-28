@@ -3,21 +3,36 @@ package pages
 import "github.com/Maxim-Ba/cv-backend/internal/view/components/layout"
 import "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 import "github.com/Maxim-Ba/cv-backend/internal/models/gen"
+import "github.com/Maxim-Ba/cv-backend/internal/view/components/components"
 
 templ TagPage(user string, tagsResult entityreqdecorator.PagebleRs[models.Tag]) {
-	@layout.Base("Tag", tagPage(user, tagsResult), user)
+  @layout.Base("Tag", tagPage(user, tagsResult), user)
 }
 
 templ tagPage(user string, tagsResult entityreqdecorator.PagebleRs[models.Tag]) {
-	<h1>Tag</h1>
-	<div>
-		for i, tag := range tagsResult.Content {
-			<div class="flex">
-				<div>{ i + 1 }</div>
-				<div>{ tag.Name }</div>
-				<div>{ tag.HexColor }</div>
-			</div>
-		}
-		Page: { tagsResult.Page }, Total: { tagsResult.Total }, Size: { tagsResult.Size }
-	</div>
+  @components.CRUDGrid(tagsResult, components.Entity{Name: "tag"}) {
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>name</th>
+          <th>color</th>
+          <th>action</th>
+        </tr>
+      </thead>
+      <tbody>
+        for _, tag := range tagsResult.Content {
+          <tr>
+            <td>{ tag.ID }</td>
+            <td>{ tag.Name }</td>
+            <td style={ "background-color: " + tag.HexColor + ";" }>{ tag.HexColor }</td>
+            <td>
+              <button class="btn btn-sm btn-warning">Edit</button>
+              <button class="btn btn-sm btn-danger">Delete</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
 }

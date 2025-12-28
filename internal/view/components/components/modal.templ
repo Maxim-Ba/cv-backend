@@ -1,0 +1,158 @@
+package components
+
+import (
+	"github.com/a-h/templ"
+	"github.com/Maxim-Ba/cv-backend/internal/models/gen"
+	"strconv"
+)
+
+type EntityFormData struct {
+	EntityName string
+	Fields     []FormField
+	ActionURL  string
+	Method     string // "POST" || "PUT"
+	EntityID   int64
+	CSRFToken  string
+}
+
+type FormField struct {
+	Name        string
+	Label       string
+	Type        string
+	Value       string
+	Placeholder string
+	Required    bool
+	IsTextArea  bool
+}
+
+templ ModalForm(data EntityFormData) {
+	<div id="entityModal" class="modal fade show" style="display: block; background-color: rgba(0,0,0,0.5);" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title"> { if data.EntityID > 0 { "Редактировать " } else {  "Добавить " } } { data.EntityName } </h5>
+					<a href="?" class="close" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</a>
+				</div>
+				<div class="modal-body">
+					<form method="POST" action={ data.ActionURL }>
+						<input type="hidden" name="_method" value={ data.Method }/>
+						<input type="hidden" name="csrf_token" value={ data.CSRFToken }/>
+						{ if data.EntityID > 0 {
+							<input type="hidden" name="id" value={ strconv.FormatInt(data.EntityID, 10) }/>
+						} }
+						
+						{ for _, field := range data.Fields {
+							<div class="mb-3">
+								<label for={ "field-" + field.Name } class="form-label">{ field.Label }</label>
+								{ if field.IsTextArea {
+									<textarea
+										class="form-control"
+										id={ "field-" + field.Name }
+										name={ field.Name }
+										rows="3"
+										placeholder={ field.Placeholder }
+										{ if field.Required { required } }
+									>{ field.Value }</textarea>
+								} else {
+									<input
+										type={ field.Type }
+										class="form-control"
+										id={ "field-" + field.Name }
+										name={ field.Name }
+										value={ field.Value }
+										placeholder={ field.Placeholder }
+										{ if field.Required { required } }
+									/>
+								} }
+							</div>
+						} }
+						
+						<div class="modal-footer">
+							<a href="?" class="btn btn-secondary">Отмена</a>
+							<button type="submit" class="btn btn-primary">
+								{ if data.EntityID > 0 { "Сохранить" } else { "Создать" } }
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+func TechnologyFormData(tech models.Technology, csrfToken string, isEdit bool) EntityFormData {
+	method := "POST"
+	if isEdit {
+		method = "PUT"
+	}
+	
+	return EntityFormData{
+		EntityName: "Technology",
+		ActionURL:  "/api/tech",
+		Method:     method,
+		EntityID:   tech.ID,
+		CSRFToken:  csrfToken,
+		Fields: []FormField{
+			{
+				Name:        "title",
+				Label:       "Название",
+				Type:        "text",
+				Value:       tech.Title,
+				Placeholder: "Введите название технологии",
+				Required:    true,
+			},
+			{
+				Name:        "description",
+				Label:       "Описание",
+				Type:        "text",
+				Value:       tech.Description.String,
+				Placeholder: "Введите описание",
+				IsTextArea:  true,
+				Required:    false,
+			},
+			{
+				Name:        "logoUrl",
+				Label:       "URL логотипа",
+				Type:        "url",
+				Value:       tech.LogoUrl.String,
+				Placeholder: "https://example.com/logo.png",
+				Required:    false,
+			},
+		},
+	}
+}
+
+func TagFormData(tag models.Tag, csrfToken string, isEdit bool) EntityFormData {
+	method := "POST"
+	if isEdit {
+		method = "PUT"
+	}
+	
+	return EntityFormData{
+		EntityName: "Tag",
+		ActionURL:  "/api/tag",
+		Method:     method,
+		EntityID:   tag.ID,
+		CSRFToken:  csrfToken,
+		Fields: []FormField{
+			{
+				Name:        "name",
+				Label:       "Название",
+				Type:        "text",
+				Value:       tag.Name,
+				Placeholder: "Введите название тега",
+				Required:    true,
+			},
+			{
+				Name:        "hexColor",
+				Label:       "Цвет (HEX)",
+				Type:        "text",
+				Value:       tag.HexColor,
+				Placeholder: "#FF0077",
+				Required:    true,
+			},
+		},
+	}
+}

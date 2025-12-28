@@ -1,0 +1,64 @@
+package components
+
+import "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
+import "strconv"
+import "golang.org/x/text/cases"
+import "golang.org/x/text/language"
+
+type Entity struct {
+	Name string
+}
+
+templ CRUDGrid[T any](pageble entityreqdecorator.PagebleRs[T], entity Entity) {
+	{{
+		
+	totalPages := 1
+	if pageble.Total > 0 && pageble.Size > 0 {
+		totalPages = (int(pageble.Total) + pageble.Size - 1) / pageble.Size
+	}
+	var displayName string
+	if entity.Name != "" {
+		caser := cases.Title(language.English)
+		displayName = caser.String(entity.Name)
+	}
+
+	}}
+	<div class="container">
+		<h1>{ displayName }</h1>
+		<form method="GET" action={ "/admin/" + entity.Name } class="mb-4">
+			<div class="row">
+				<div class="col-md-3">
+					<input type="number" name="page" value={ strconv.Itoa(pageble.Page) } placeholder="Page" class="form-control"/>
+				</div>
+				<div class="col-md-3">
+					<input type="number" name="size" value="20" placeholder="Elements on page" class="form-control"/>
+				</div>
+				<div class="col-md-3">
+					<button type="submit" class="btn btn-primary">Applay filters</button>
+				</div>
+			</div>
+		</form>
+		{ children... }
+		if totalPages > 1 {
+			<nav>
+				<ul class="pagination">
+					if pageble.Page > 1 {
+						<li class="page-item">
+							<a class="page-link" href={ "/admin/" + entity.Name + "?page=" + strconv.Itoa(pageble.Page-1) + "&size=20" }>Prev</a>
+						</li>
+					}
+					for i := 1; i <= totalPages; i++ {
+						<li class="page-item">
+							<a class="page-link" href={ "/admin/" + entity.Name + "?page=" + strconv.Itoa(i) + "&size=20" }>{ i }</a>
+						</li>
+					}
+					if pageble.Page < totalPages {
+						<li class="page-item">
+							<a class="page-link" href={ "/admin/" + entity.Name + "?page=" + strconv.Itoa(pageble.Page+1) + "&size=20" }>Next</a>
+						</li>
+					}
+				</ul>
+			</nav>
+		}
+	</div>
+}

@@ -74,6 +74,7 @@ func initApplication(ctx context.Context, db *dbconn.DB, cfg *config.Config) (*r
 	repos := defineRepositories(db)
 	deps := &router.Dependencies{
 		TagService: services.NewTagServise(repos.TagRepository),
+		TechService: services.NewTechService(repos.TechRepository),
 	}
 	r := router.New(deps)
 	return r, nil
@@ -81,10 +82,12 @@ func initApplication(ctx context.Context, db *dbconn.DB, cfg *config.Config) (*r
 
 type Repositories struct {
 	TagRepository *repository.TagRepo
+	TechRepository *repository.TechnologyRepo
 }
 
 func defineRepositories(db *dbconn.DB) *Repositories {
 	return &Repositories{
 		TagRepository: repository.NewTagRepo(db.GetConnection()),
+		TechRepository: repository.NewTechnologyRepo(db.GetConnection()),
 	}
 }

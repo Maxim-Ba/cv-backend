@@ -1,14 +1,42 @@
 package pages
 
 import (
-    "github.com/Maxim-Ba/cv-backend/internal/view/components/layout"
+	"github.com/Maxim-Ba/cv-backend/internal/models/gen"
+	"github.com/Maxim-Ba/cv-backend/internal/view/components/components"
+	"github.com/Maxim-Ba/cv-backend/internal/view/components/layout"
+	"github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
-templ TechPage(user string) {
-    @layout.Base("Tech", techPage(user), user)
+templ TechPage(user string, techResult entityreqdecorator.PagebleRs[models.Technology], editID string, csrfToken string) {
+	@layout.Base("Tech", techPage(techResult, editID, csrfToken), user)
 }
 
-templ techPage(user string) {
-   <h1>Technolgies</h1>
-    
+templ techPage(techResult entityreqdecorator.PagebleRs[models.Technology], editID string, csrfToken string) {
+	@components.CRUDGrid(techResult, components.Entity{Name: "technology"}) {
+		<table class="table table-striped">
+			<thead>
+				<tr>
+					<th>ID</th>
+					<th>title</th>
+					<th>description</th>
+					<th>logoUrl</th>
+					<th>action</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, tech := range techResult.Content {
+					<tr>
+						<td>{ tech.ID }</td>
+						<td>{ tech.Title }</td>
+						<td>{ tech.Description.String }</td>
+						<td>{ tech.LogoUrl.String }</td>
+						<td>
+							<button class="btn btn-sm btn-warning">Edit</button>
+							<button class="btn btn-sm btn-danger">Delete</button>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
 }

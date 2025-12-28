@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/gorilla/csrf"
 
 	m "github.com/Maxim-Ba/cv-backend/internal/middleware"
 	"github.com/Maxim-Ba/cv-backend/internal/services"
@@ -16,28 +17,37 @@ import (
 )
 
 type Router struct {
-	R         *chi.Mux
+	R    *chi.Mux
 	Deps *Dependencies
 }
 
 type Dependencies struct {
-	TagService *services.TagService
+	TagService  *services.TagService
+	TechService *services.TechService
 }
 
-func New(deps *Dependencies ) *Router {
+func New(deps *Dependencies) *Router {
 	r := chi.NewRouter()
+
+csrfMiddleware := csrf.Protect(
+		[]byte("32-byte-long-auth-key"), 
+		csrf.Secure(false),              
+		csrf.FieldName("csrf_token"),
+		csrf.CookieName("csrf_token"),
+	)
+
 	logger := &m.StructuredLogger{Logger: slog.Default()}
 	r.Use(middleware.RequestLogger(logger))
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
+	r.Use(csrfMiddleware)
 
 	router := &Router{
-		R:         r,
+		R:    r,
 		Deps: deps,
-
 	}
 
-	h:= createHandlers(deps)
+	h := createHandlers(deps)
 
 	fs := http.FileServer(http.Dir("internal/view/static"))
 	r.Handle("/static/*", http.StripPrefix("/static/", fs))
@@ -49,7 +59,7 @@ func New(deps *Dependencies ) *Router {
 		r.Get("/history", router.admiHistory)
 		r.Get("/education", router.adminEducation)
 		r.Get("/login", router.adminLogin)
-		r.Post("/login", router.adminLoginPost) 
+		r.Post("/login", router.adminLoginPost)
 	})
 
 	r.Route("/api", func(r chi.Router) {
@@ -95,71 +105,79 @@ func New(deps *Dependencies ) *Router {
 
 	return router
 }
-	type handlers struct {
-		TagHandler *TagHandler
-	}
+
+type handlers struct {
+	TagHandler *TagHandler
+}
+
 func createHandlers(deps *Dependencies) *handlers {
 
-	tagHandler := NewTagHandler( *deps.TagService )
+	tagHandler := NewTagHandler(*deps.TagService)
 	return &handlers{
 		TagHandler: tagHandler,
 	}
 }
 
-
 func (rt *Router) adminDashboard(w http.ResponseWriter, r *http.Request) {
-    user := "Администратор"
-    component := pages.AdminPage(user)
-    component.Render(r.Context(), w)
+	user := "Администратор"
+	component := pages.AdminPage(user)
+	component.Render(r.Context(), w)
 }
 func (rt *Router) adminEducation(w http.ResponseWriter, r *http.Request) {
-    user := "Администратор"
-    component := pages.EducationPage(user)
-    component.Render(r.Context(), w)
+	user := "Администратор"
+	component := pages.EducationPage(user)
+	component.Render(r.Context(), w)
 }
 func (rt *Router) admiHistory(w http.ResponseWriter, r *http.Request) {
-    user := "Администратор"
-    component := pages.HistoryPage(user)
-    component.Render(r.Context(), w)
+	user := "Администратор"
+	component := pages.HistoryPage(user)
+	component.Render(r.Context(), w)
 }
 
 func (rt *Router) adminTech(w http.ResponseWriter, r *http.Request) {
-    user := "Администратор"
-		
-    component := pages.TechPage(user, )
-    component.Render(r.Context(), w)
+	user := "Администратор"
+	queryParams := r.URL.Query()
+	pagebleRq := entityreqdecorator.ParseQueryParams(queryParams)
+	techResult, err := rt.Deps.TechService.List(pagebleRq)
+	if err != nil {
+		slog.Error(err.Error())
+	}
+	csrfToken := csrf.Token(r)
+	
+	editID := r.URL.Query().Get("edit")
+	component := pages.TechPage(user, techResult, editID, csrfToken )
+	component.Render(r.Context(), w)
 }
 
 func (rt *Router) adminTags(w http.ResponseWriter, r *http.Request) {
-    user := "Администратор"
-		queryParams := r.URL.Query()
-		pagebleRq := entityreqdecorator.ParseQueryParams(queryParams)
-		tagsResult, err := rt.Deps.TagService.List(pagebleRq)
-		if err!=nil {
-			slog.Error(err.Error())
-		}
-    component := pages.TagPage(user, tagsResult)
-    component.Render(r.Context(), w)
+	user := "Администратор"
+	queryParams := r.URL.Query()
+	pagebleRq := entityreqdecorator.ParseQueryParams(queryParams)
+	tagsResult, err := rt.Deps.TagService.List(pagebleRq)
+	if err != nil {
+		slog.Error(err.Error())
+	}
+	component := pages.TagPage(user, tagsResult)
+	component.Render(r.Context(), w)
 }
 
-
 func (rt *Router) adminLogin(w http.ResponseWriter, r *http.Request) {
-    component := pages.Login("")
-    component.Render(r.Context(), w)
+	component := pages.Login("")
+	component.Render(r.Context(), w)
 }
 
 func (rt *Router) adminLoginPost(w http.ResponseWriter, r *http.Request) {
-    err := r.ParseForm()
-		if err != nil {
-			slog.Error(err.Error())
-		}
-    username := r.FormValue("username")
-    password := r.FormValue("password")
+	err := r.ParseForm()
+	if err != nil {
+		slog.Error(err.Error())
+	}
+	username := r.FormValue("username")
+	password := r.FormValue("password")
 
-    if username != "admin" || password != "admin" {
-        component := pages.Login("Неверный логин или пароль")
-        component.Render(r.Context(), w)
-        return
-    }
-    http.Redirect(w, r, "/admin", http.StatusSeeOther)
+	if username != "admin" || password != "admin" {
+		component := pages.Login("Неверный логин или пароль")
+		component.Render(r.Context(), w)
+		return
+	}
+	http.Redirect(w, r, "/admin", http.StatusSeeOther)
 }
