@@ -3,3 +3,6 @@ sqlc.exe
 .env
 /tmp
 /tmpl
+repository.test.exe
+cv-backend.exe
+coverage.out

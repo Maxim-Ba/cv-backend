@@ -22,8 +22,10 @@ type Router struct {
 }
 
 type Dependencies struct {
-	TagService  *services.TagService
-	TechService *services.TechService
+	TagService         *services.TagService
+	TechService        *services.TechService
+	EducationService   *services.EducationService
+	WorkHistoryService *services.WorkHistoryService
 }
 
 func New(deps *Dependencies) *Router {
@@ -72,27 +74,27 @@ csrfMiddleware := csrf.Protect(
 		})
 		//
 		r.Route("/tech", func(r chi.Router) {
-			r.Get("/{techID}", TechGet)
-			r.Get("/", TechList)
-			r.Post("/", TechCreate)
-			r.Delete("/", TechDelete)
-			r.Put("/", TechUpdate)
+			r.Get("/{techID}", h.TechHandler.TechGet)
+			r.Get("/", h.TechHandler.TechList)
+			r.Post("/", h.TechHandler.TechCreate)
+			r.Delete("/", h.TechHandler.TechDelete)
+			r.Put("/", h.TechHandler.TechUpdate)
 		})
 		//
 		r.Route("/wh", func(r chi.Router) {
-			r.Get("/{whID}", WorkHistoryGet)
-			r.Get("/", WorkHistoryList)
-			r.Post("/", WorkHistoryCreate)
-			r.Delete("/", WorkHistoryDelete)
-			r.Put("/", WorkHistoryUpdate)
+			r.Get("/{whID}", h.WorkHistoryHandler.WorkHistoryGet)
+			r.Get("/", h.WorkHistoryHandler.WorkHistoryList)
+			r.Post("/", h.WorkHistoryHandler.WorkHistoryCreate)
+			r.Delete("/", h.WorkHistoryHandler.WorkHistoryDelete)
+			r.Put("/", h.WorkHistoryHandler.WorkHistoryUpdate)
 		})
 		//
 		r.Route("/edu", func(r chi.Router) {
-			r.Get("/{eduID}", EducationGet)
-			r.Get("/", EducationList)
-			r.Post("/", EducationCreate)
-			r.Delete("/", EducationDelete)
-			r.Put("/", EducationUpdate)
+			r.Get("/{eduID}", h.EducationHandler.EducationGet)
+			r.Get("/", h.EducationHandler.EducationList)
+			r.Post("/", h.EducationHandler.EducationCreate)
+			r.Delete("/", h.EducationHandler.EducationDelete)
+			r.Put("/", h.EducationHandler.EducationUpdate)
 		})
 		//
 		r.Route("/fb", func(r chi.Router) {
@@ -107,14 +109,23 @@ csrfMiddleware := csrf.Protect(
 }
 
 type handlers struct {
-	TagHandler *TagHandler
+	TagHandler         *TagHandler
+	TechHandler        *TechHandler
+	EducationHandler   *EducationHandler
+	WorkHistoryHandler *WorkHistoryHandler
 }
 
 func createHandlers(deps *Dependencies) *handlers {
-
 	tagHandler := NewTagHandler(*deps.TagService)
+	techHandler := NewTechHandler(deps.TechService)
+	educationHandler := NewEducationHandler(deps.EducationService)
+	workHistoryHandler := NewWorkHistoryHandler(deps.WorkHistoryService)
+
 	return &handlers{
-		TagHandler: tagHandler,
+		TagHandler:         tagHandler,
+		TechHandler:        techHandler,
+		EducationHandler:   educationHandler,
+		WorkHistoryHandler: workHistoryHandler,
 	}
 }
 

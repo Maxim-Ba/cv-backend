@@ -69,25 +69,36 @@ func main() {
 }
 
 func initApplication(ctx context.Context, db *dbconn.DB, cfg *config.Config) (*router.Router, error) {
-	//TODO init other services
-
+	// Инициализация репозиториев
 	repos := defineRepositories(db)
+	
+	// Инициализация сервисов с использованием репозиториев
 	deps := &router.Dependencies{
-		TagService: services.NewTagServise(repos.TagRepository),
-		TechService: services.NewTechService(repos.TechRepository),
+		TagService:         services.NewTagServise(repos.TagRepository),
+		TechService:        services.NewTechService(repos.TechRepository),
+		EducationService:   services.NewEducationService(repos.EducationRepository),
+		WorkHistoryService: services.NewWorkHistoryService(repos.WorkHistoryRepository),
 	}
+	
+	// Инициализация роутера с зависимостями
 	r := router.New(deps)
 	return r, nil
 }
 
+// Repositories структура для хранения всех репозиториев приложения
 type Repositories struct {
-	TagRepository *repository.TagRepo
-	TechRepository *repository.TechnologyRepo
+	TagRepository         *repository.TagRepo
+	TechRepository        *repository.TechnologyRepo
+	EducationRepository   *repository.EducationRepo
+	WorkHistoryRepository *repository.WorkHistoryRepo
 }
 
+// defineRepositories создает экземпляры всех репозиториев
 func defineRepositories(db *dbconn.DB) *Repositories {
 	return &Repositories{
-		TagRepository: repository.NewTagRepo(db.GetConnection()),
-		TechRepository: repository.NewTechnologyRepo(db.GetConnection()),
+		TagRepository:         repository.NewTagRepo(db.GetConnection()),
+		TechRepository:        repository.NewTechnologyRepo(db.GetConnection()),
+		EducationRepository:   repository.NewEducationRepo(db.GetConnection()),
+		WorkHistoryRepository: repository.NewWorkHistoryRepo(db.GetConnection()),
 	}
 }
