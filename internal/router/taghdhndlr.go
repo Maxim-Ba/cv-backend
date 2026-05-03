@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	_ "github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	"github.com/Maxim-Ba/cv-backend/internal/services"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
@@ -23,6 +24,15 @@ func NewTagHandler(ts services.TagService) *TagHandler {
 }
 
 // TagGet получает один тег по ID
+//
+// @Summary      Получить тег по ID
+// @Tags         tags
+// @Produce      json
+// @Param        tagID  path  int  true  "ID тега"
+// @Success      200  {object}  dto.TagDTO
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /tag/{tagID} [get]
 func (th *TagHandler) TagGet(w http.ResponseWriter, r *http.Request) {
 	tagIDStr := chi.URLParam(r, "tagID")
 	tagID, err := strconv.ParseInt(tagIDStr, 10, 64)
@@ -50,6 +60,16 @@ func (th *TagHandler) TagGet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
+// TagList получает список тегов с пагинацией
+//
+// @Summary      Список тегов
+// @Tags         tags
+// @Produce      json
+// @Param        page  query  int  false  "Номер страницы"
+// @Param        size  query  int  false  "Размер страницы"
+// @Success      200  {object}  dto.TagListResponse
+// @Failure      500  {object}  map[string]string
+// @Router       /tag [get]
 func (th *TagHandler) TagList(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	pagebleRq := entityreqdecorator.ParseQueryParams(queryParams)
@@ -71,6 +91,16 @@ func (th *TagHandler) TagList(w http.ResponseWriter, r *http.Request) {
 }
 
 // TagCreate создает новый тег
+//
+// @Summary      Создать тег
+// @Tags         tags
+// @Accept       json
+// @Produce      json
+// @Param        body  body  object{name=string,hexColor=string}  true  "Данные тега"
+// @Success      201  {object}  dto.TagDTO
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /tag [post]
 func (th *TagHandler) TagCreate(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
 		Name     string `json:"name"`
@@ -109,6 +139,16 @@ func (th *TagHandler) TagCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 // TagDelete удаляет тег
+//
+// @Summary      Удалить тег(и)
+// @Tags         tags
+// @Accept       json
+// @Produce      json
+// @Param        body  body  object{ids=[]int64}  true  "Список ID для удаления"
+// @Success      200  {object}  dto.DeleteResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /tag [delete]
 func (th *TagHandler) TagDelete(w http.ResponseWriter, r *http.Request) {
 	var deleteReq struct {
 		IDs []int64 `json:"ids"`
@@ -154,6 +194,16 @@ func (th *TagHandler) TagDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 // TagUpdate обновляет тег
+//
+// @Summary      Обновить тег
+// @Tags         tags
+// @Accept       json
+// @Produce      json
+// @Param        body  body  object{id=int64,name=string,hexColor=string}  true  "Данные тега"
+// @Success      200  {object}  dto.TagDTO
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /tag [put]
 func (th *TagHandler) TagUpdate(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
 		ID       int64  `json:"id"`

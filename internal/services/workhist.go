@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 
+	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
@@ -25,11 +26,18 @@ type WorkHistoryReader interface {
 	List(entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[models.WorkHistory], error)
 }
 
+// WorkHistoryDTOReader интерфейс для чтения истории работы с вложенными технологиями
+type WorkHistoryDTOReader interface {
+	GetWithTechnologies(id int64) (dto.WorkHistoryWithTechnologiesDTO, error)
+	ListWithTechnologies(entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO], error)
+}
+
 // WorkHistoryManager объединяет все интерфейсы для работы с историей работы
 type WorkHistoryManager interface {
 	WorkHistoryReader
 	WorkHistoryWriter
 	WorkHistoryDeleter
+	WorkHistoryDTOReader
 }
 
 // WorkHistoryService сервис для работы с историей работы
@@ -97,6 +105,27 @@ func (s *WorkHistoryService) Create(workHistory models.WorkHistory) (models.Work
 	res, err := s.repo.Create(workHistory)
 	if err != nil {
 		return models.WorkHistory{}, fmt.Errorf("error creating work history: %w", err)
+	}
+	return res, nil
+}
+
+// GetWithTechnologies получает историю работы с технологиями по ID
+func (s *WorkHistoryService) GetWithTechnologies(id int64) (dto.WorkHistoryWithTechnologiesDTO, error) {
+	if id == 0 {
+		return dto.WorkHistoryWithTechnologiesDTO{}, fmt.Errorf("invalid work history ID: %d", id)
+	}
+	res, err := s.repo.GetWithTechnologies(id)
+	if err != nil {
+		return dto.WorkHistoryWithTechnologiesDTO{}, fmt.Errorf("error getting work history with technologies: %w", err)
+	}
+	return res, nil
+}
+
+// ListWithTechnologies получает список истории работы с технологиями
+func (s *WorkHistoryService) ListWithTechnologies(r entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO], error) {
+	res, err := s.repo.ListWithTechnologies(r)
+	if err != nil {
+		return entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO]{}, fmt.Errorf("error in getting list with technologies from WorkHistory repo: %w", err)
 	}
 	return res, nil
 }

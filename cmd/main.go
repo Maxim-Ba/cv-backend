@@ -1,3 +1,9 @@
+// @title           CV Backend API
+// @version         1.0
+// @description     REST API для CV-приложения: теги, технологии, история работы, образование.
+// @host            localhost:3333
+// @BasePath        /api
+
 package main
 
 import (
@@ -12,6 +18,7 @@ import (
 	"syscall"
 
 	"github.com/Maxim-Ba/cv-backend/config"
+	_ "github.com/Maxim-Ba/cv-backend/docs"
 	"github.com/Maxim-Ba/cv-backend/internal/dbconn"
 	"github.com/Maxim-Ba/cv-backend/internal/repository"
 	"github.com/Maxim-Ba/cv-backend/internal/router"
@@ -81,7 +88,7 @@ func initApplication(ctx context.Context, db *dbconn.DB, cfg *config.Config) (*r
 	}
 	
 	// Инициализация роутера с зависимостями
-	r := router.New(deps)
+	r := router.New(deps, cfg.AllowedOrigin)
 	return r, nil
 }
 

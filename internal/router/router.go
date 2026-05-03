@@ -8,7 +8,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/gorilla/csrf"
+	httpSwagger "github.com/swaggo/http-swagger"
 
 	m "github.com/Maxim-Ba/cv-backend/internal/middleware"
 	"github.com/Maxim-Ba/cv-backend/internal/services"
@@ -28,17 +30,27 @@ type Dependencies struct {
 	WorkHistoryService *services.WorkHistoryService
 }
 
-func New(deps *Dependencies) *Router {
+func New(deps *Dependencies, allowedOrigin string) *Router {
 	r := chi.NewRouter()
 
 csrfMiddleware := csrf.Protect(
-		[]byte("32-byte-long-auth-key"), 
-		csrf.Secure(false),              
+		[]byte("32-byte-long-auth-key"),
+		csrf.Secure(false),
 		csrf.FieldName("csrf_token"),
 		csrf.CookieName("csrf_token"),
 	)
 
+	corsMiddleware := cors.Handler(cors.Options{
+		AllowedOrigins:   []string{allowedOrigin},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	})
+
 	logger := &m.StructuredLogger{Logger: slog.Default()}
+	r.Use(corsMiddleware)
 	r.Use(middleware.RequestLogger(logger))
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
@@ -63,6 +75,8 @@ csrfMiddleware := csrf.Protect(
 		r.Get("/login", router.adminLogin)
 		r.Post("/login", router.adminLoginPost)
 	})
+
+	r.Get("/swagger/*", httpSwagger.WrapHandler)
 
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/tag", func(r chi.Router) {

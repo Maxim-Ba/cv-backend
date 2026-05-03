@@ -11,6 +11,7 @@ type Config struct {
 	MigrationPath    string
 	LogLevel         string
 	AppEnv           string
+	AllowedOrigin    string
 }
 
 var cfg Config
@@ -30,6 +31,7 @@ func init() {
 			MigrationPath:    envs.MigrationPath,
 			LogLevel:         envs.LogLevel,
 			AppEnv:           envs.AppEnv,
+			AllowedOrigin:    envs.AllowedOrigin,
 		}
 	}
 }

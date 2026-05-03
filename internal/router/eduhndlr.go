@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	_ "github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	"github.com/Maxim-Ba/cv-backend/internal/services"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
@@ -26,6 +27,15 @@ func NewEducationHandler(es *services.EducationService) *EducationHandler {
 }
 
 // EducationGet получает одну запись образования по ID
+//
+// @Summary      Получить запись образования по ID
+// @Tags         education
+// @Produce      json
+// @Param        eduID  path  int  true  "ID записи образования"
+// @Success      200  {object}  dto.EducationDTO
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /edu/{eduID} [get]
 func (eh *EducationHandler) EducationGet(w http.ResponseWriter, r *http.Request) {
 	eduIDStr := chi.URLParam(r, "eduID")
 	eduID, err := strconv.ParseInt(eduIDStr, 10, 64)
@@ -55,6 +65,15 @@ func (eh *EducationHandler) EducationGet(w http.ResponseWriter, r *http.Request)
 }
 
 // EducationList получает список записей образования
+//
+// @Summary      Список записей образования
+// @Tags         education
+// @Produce      json
+// @Param        page  query  int  false  "Номер страницы"
+// @Param        size  query  int  false  "Размер страницы"
+// @Success      200  {object}  dto.EducationListResponse
+// @Failure      500  {object}  map[string]string
+// @Router       /edu [get]
 func (eh *EducationHandler) EducationList(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	pagebleRq := entityreqdecorator.ParseQueryParams(queryParams)
@@ -76,6 +95,16 @@ func (eh *EducationHandler) EducationList(w http.ResponseWriter, r *http.Request
 }
 
 // EducationCreate создает новую запись образования
+//
+// @Summary      Создать запись образования
+// @Tags         education
+// @Accept       json
+// @Produce      json
+// @Param        body  body  object{name=string,year=int32,course=string,organization=string}  true  "Данные записи"
+// @Success      201  {object}  dto.EducationDTO
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /edu [post]
 func (eh *EducationHandler) EducationCreate(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
 		Name         string `json:"name"`
@@ -118,6 +147,16 @@ func (eh *EducationHandler) EducationCreate(w http.ResponseWriter, r *http.Reque
 }
 
 // EducationDelete удаляет запись образования
+//
+// @Summary      Удалить запись(и) образования
+// @Tags         education
+// @Accept       json
+// @Produce      json
+// @Param        body  body  object{ids=[]int64}  true  "Список ID для удаления"
+// @Success      200  {object}  dto.DeleteResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /edu [delete]
 func (eh *EducationHandler) EducationDelete(w http.ResponseWriter, r *http.Request) {
 	var deleteReq struct {
 		IDs []int64 `json:"ids"`
@@ -163,6 +202,16 @@ func (eh *EducationHandler) EducationDelete(w http.ResponseWriter, r *http.Reque
 }
 
 // EducationUpdate обновляет запись образования
+//
+// @Summary      Обновить запись образования
+// @Tags         education
+// @Accept       json
+// @Produce      json
+// @Param        body  body  object{id=int64,name=string,year=int32,course=string,organization=string}  true  "Данные записи"
+// @Success      200  {object}  dto.EducationDTO
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /edu [put]
 func (eh *EducationHandler) EducationUpdate(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
 		ID           int64  `json:"id"`

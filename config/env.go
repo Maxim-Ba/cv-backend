@@ -17,6 +17,7 @@ type Envs struct {
 	MigrationPath    string `env:"MIGRATION_PATH"`
 	LogLevel         string `env:"LOG_LEVEL" default:"error"`
 	AppEnv           string `env:"APP_ENV" default:"development"`
+	AllowedOrigin    string `env:"ALLOWED_ORIGIN" default:"http://localhost:4200"`
 }
 
 func parseEnv() (*Envs, error) {

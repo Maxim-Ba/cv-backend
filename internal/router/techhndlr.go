@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	_ "github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	"github.com/Maxim-Ba/cv-backend/internal/services"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
@@ -25,7 +26,16 @@ func NewTechHandler(ts *services.TechService) *TechHandler {
 	}
 }
 
-// TechGet получает одну технологию по ID
+// TechGet получает одну технологию по ID вместе с тегами
+//
+// @Summary      Получить технологию по ID
+// @Tags         technologies
+// @Produce      json
+// @Param        techID  path  int  true  "ID технологии"
+// @Success      200  {object}  dto.TechnologyWithTagsDTO
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /tech/{techID} [get]
 func (th *TechHandler) TechGet(w http.ResponseWriter, r *http.Request) {
 	techIDStr := chi.URLParam(r, "techID")
 	techID, err := strconv.ParseInt(techIDStr, 10, 64)
@@ -38,7 +48,7 @@ func (th *TechHandler) TechGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	technology, err := th.service.Get(techID)
+	technology, err := th.service.GetWithTags(techID)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -54,11 +64,20 @@ func (th *TechHandler) TechGet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// TechList получает список технологий
+// TechList получает список технологий с тегами
+//
+// @Summary      Список технологий
+// @Tags         technologies
+// @Produce      json
+// @Param        page  query  int  false  "Номер страницы"
+// @Param        size  query  int  false  "Размер страницы"
+// @Success      200  {object}  dto.TechListResponse
+// @Failure      500  {object}  map[string]string
+// @Router       /tech [get]
 func (th *TechHandler) TechList(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	pagebleRq := entityreqdecorator.ParseQueryParams(queryParams)
-	list, err := th.service.List(pagebleRq)
+	list, err := th.service.ListWithTags(pagebleRq)
 
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -76,6 +95,16 @@ func (th *TechHandler) TechList(w http.ResponseWriter, r *http.Request) {
 }
 
 // TechCreate создает новую технологию
+//
+// @Summary      Создать технологию
+// @Tags         technologies
+// @Accept       json
+// @Produce      json
+// @Param        body  body  object{title=string,description=string,logoUrl=string}  true  "Данные технологии"
+// @Success      201  {object}  dto.TechnologyDTO
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /tech [post]
 func (th *TechHandler) TechCreate(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
 		Title       string `json:"title"`
@@ -116,6 +145,16 @@ func (th *TechHandler) TechCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 // TechDelete удаляет технологию
+//
+// @Summary      Удалить технологию(и)
+// @Tags         technologies
+// @Accept       json
+// @Produce      json
+// @Param        body  body  object{ids=[]int64}  true  "Список ID для удаления"
+// @Success      200  {object}  dto.DeleteResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /tech [delete]
 func (th *TechHandler) TechDelete(w http.ResponseWriter, r *http.Request) {
 	var deleteReq struct {
 		IDs []int64 `json:"ids"`
@@ -161,6 +200,16 @@ func (th *TechHandler) TechDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 // TechUpdate обновляет технологию
+//
+// @Summary      Обновить технологию
+// @Tags         technologies
+// @Accept       json
+// @Produce      json
+// @Param        body  body  object{id=int64,title=string,description=string,logoUrl=string}  true  "Данные технологии"
+// @Success      200  {object}  dto.TechnologyDTO
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /tech [put]
 func (th *TechHandler) TechUpdate(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
 		ID          int64  `json:"id"`

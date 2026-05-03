@@ -6,6 +6,7 @@ import (
 
 	"github.com/lib/pq"
 
+	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
@@ -202,4 +203,154 @@ func (t *TechnologyRepo) isValidField(field string) bool {
 		"logo_url":    true,
 	}
 	return validFields[field]
+}
+
+// technologyRowToDTO конвертирует поля строки запроса в TechnologyDTO
+func technologyRowToDTO(id int64, title string, description sql.NullString, logoUrl sql.NullString) dto.TechnologyWithTagsDTO {
+	tech := dto.TechnologyWithTagsDTO{
+		TechnologyDTO: dto.TechnologyDTO{
+			ID:    id,
+			Title: title,
+		},
+		Tags: []dto.TagDTO{},
+	}
+	if description.Valid {
+		tech.Description = &description.String
+	}
+	if logoUrl.Valid {
+		tech.LogoUrl = &logoUrl.String
+	}
+	return tech
+}
+
+// GetWithTags получает технологию по ID вместе с её тегами
+func (t *TechnologyRepo) GetWithTags(id int64) (dto.TechnologyWithTagsDTO, error) {
+	query := `
+		SELECT t.id, t.title, t.description, t.logo_url,
+		       tg.id, tg.name, tg.hex_color
+		FROM technology t
+		LEFT JOIN technologies_tag tt ON tt.technology_id = t.id
+		LEFT JOIN tag tg ON tg.id = tt.tag_id
+		WHERE t.id = $1
+	`
+
+	rows, err := t.db.Query(query, id)
+	if err != nil {
+		return dto.TechnologyWithTagsDTO{}, fmt.Errorf("failed to get technology with tags: %w", err)
+	}
+	defer rows.Close()
+
+	var result *dto.TechnologyWithTagsDTO
+	for rows.Next() {
+		var (
+			techID      int64
+			title       string
+			description sql.NullString
+			logoUrl     sql.NullString
+			tagID       sql.NullInt64
+			tagName     sql.NullString
+			tagHexColor sql.NullString
+		)
+		if err := rows.Scan(&techID, &title, &description, &logoUrl, &tagID, &tagName, &tagHexColor); err != nil {
+			return dto.TechnologyWithTagsDTO{}, fmt.Errorf("failed to scan technology with tags: %w", err)
+		}
+		if result == nil {
+			t := technologyRowToDTO(techID, title, description, logoUrl)
+			result = &t
+		}
+		if tagID.Valid {
+			result.Tags = append(result.Tags, dto.TagDTO{
+				ID:       tagID.Int64,
+				Name:     tagName.String,
+				HexColor: tagHexColor.String,
+			})
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return dto.TechnologyWithTagsDTO{}, fmt.Errorf("rows error: %w", err)
+	}
+	if result == nil {
+		return dto.TechnologyWithTagsDTO{}, fmt.Errorf("technology with id %d not found", id)
+	}
+	return *result, nil
+}
+
+// ListWithTags получает список технологий с тегами и пагинацией
+func (t *TechnologyRepo) ListWithTags(req entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO], error) {
+	countQuery := "SELECT COUNT(DISTINCT t.id) FROM technology t"
+
+	var total int
+	err := t.db.QueryRow(countQuery).Scan(&total)
+	if err != nil {
+		return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{}, fmt.Errorf("failed to count technologies: %w", err)
+	}
+
+	offset := 0
+	limit := total
+	if req.Size > 0 {
+		limit = req.Size
+		offset = req.Page * req.Size
+	}
+
+	selectQuery := `
+		SELECT t.id, t.title, t.description, t.logo_url,
+		       tg.id, tg.name, tg.hex_color
+		FROM technology t
+		LEFT JOIN technologies_tag tt ON tt.technology_id = t.id
+		LEFT JOIN tag tg ON tg.id = tt.tag_id
+		ORDER BY t.id
+		LIMIT $1 OFFSET $2
+	`
+
+	rows, err := t.db.Query(selectQuery, limit, offset)
+	if err != nil {
+		return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{}, fmt.Errorf("failed to query technologies with tags: %w", err)
+	}
+	defer rows.Close()
+
+	techMap := make(map[int64]*dto.TechnologyWithTagsDTO)
+	var order []int64
+
+	for rows.Next() {
+		var (
+			techID      int64
+			title       string
+			description sql.NullString
+			logoUrl     sql.NullString
+			tagID       sql.NullInt64
+			tagName     sql.NullString
+			tagHexColor sql.NullString
+		)
+		if err := rows.Scan(&techID, &title, &description, &logoUrl, &tagID, &tagName, &tagHexColor); err != nil {
+			return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{}, fmt.Errorf("failed to scan technology row: %w", err)
+		}
+		if _, exists := techMap[techID]; !exists {
+			tech := technologyRowToDTO(techID, title, description, logoUrl)
+			techMap[techID] = &tech
+			order = append(order, techID)
+		}
+		if tagID.Valid {
+			techMap[techID].Tags = append(techMap[techID].Tags, dto.TagDTO{
+				ID:       tagID.Int64,
+				Name:     tagName.String,
+				HexColor: tagHexColor.String,
+			})
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{}, fmt.Errorf("rows error: %w", err)
+	}
+
+	technologies := make([]dto.TechnologyWithTagsDTO, 0, len(order))
+	for _, id := range order {
+		technologies = append(technologies, *techMap[id])
+	}
+
+	return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{
+		Total:   total,
+		Content: technologies,
+		Page:    req.Page,
+		Size:    req.Size,
+		Sort:    req.Sort,
+	}, nil
 }

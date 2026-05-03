@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 
+	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
@@ -20,10 +21,15 @@ type TechReader interface {
 	Get(id int64) (models.Technology, error)
 	List(entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[models.Technology], error)
 }
+type TechDTOReader interface {
+	GetWithTags(id int64) (dto.TechnologyWithTagsDTO, error)
+	ListWithTags(entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO], error)
+}
 type TechManager interface {
 	TechReader
 	TechWriter
 	TechDeleter
+	TechDTOReader
 }
 type TechService struct {
 	repo TechManager
@@ -76,6 +82,27 @@ func (s *TechService) List(r entityreqdecorator.PagebleRq) (entityreqdecorator.P
 		return entityreqdecorator.PagebleRs[models.Technology]{}, fmt.Errorf("error in getting list from Tech repo: %w", err)
 	}
 
+	return res, nil
+}
+
+// GetWithTags получает технологию с тегами по ID
+func (s *TechService) GetWithTags(id int64) (dto.TechnologyWithTagsDTO, error) {
+	if id == 0 {
+		return dto.TechnologyWithTagsDTO{}, fmt.Errorf("invalid technology ID: %d", id)
+	}
+	res, err := s.repo.GetWithTags(id)
+	if err != nil {
+		return dto.TechnologyWithTagsDTO{}, fmt.Errorf("error getting technology with tags: %w", err)
+	}
+	return res, nil
+}
+
+// ListWithTags получает список технологий с тегами
+func (s *TechService) ListWithTags(r entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO], error) {
+	res, err := s.repo.ListWithTags(r)
+	if err != nil {
+		return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{}, fmt.Errorf("error in getting list with tags from Tech repo: %w", err)
+	}
 	return res, nil
 }
 

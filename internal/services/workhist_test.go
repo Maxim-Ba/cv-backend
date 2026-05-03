@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
@@ -61,6 +62,14 @@ func (m *MockWorkHistoryRepo) DeleteList(ids []int64) ([]int64, error) {
 		return m.DeleteListFunc(ids)
 	}
 	return nil, nil
+}
+
+func (m *MockWorkHistoryRepo) GetWithTechnologies(id int64) (dto.WorkHistoryWithTechnologiesDTO, error) {
+	return dto.WorkHistoryWithTechnologiesDTO{}, nil
+}
+
+func (m *MockWorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO], error) {
+	return entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO]{}, nil
 }
 
 // TestWorkHistoryService_Get тестирует метод Get

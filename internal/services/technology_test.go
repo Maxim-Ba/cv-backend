@@ -6,6 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
@@ -60,6 +61,14 @@ func (m *MockTechRepo) DeleteList(ids []int64) ([]int64, error) {
 		return m.DeleteListFunc(ids)
 	}
 	return nil, nil
+}
+
+func (m *MockTechRepo) GetWithTags(id int64) (dto.TechnologyWithTagsDTO, error) {
+	return dto.TechnologyWithTagsDTO{}, nil
+}
+
+func (m *MockTechRepo) ListWithTags(req entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO], error) {
+	return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{}, nil
 }
 
 // TestTechService_Get тестирует метод Get

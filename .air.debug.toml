@@ -13,7 +13,7 @@ tmp_dir = "./tmp"
   exclude_regex = ["_test.go"]
   exclude_unchanged = false
   follow_symlink = false
-  full_bin = "dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient  exec ./tmp/main -- --port=3333"
+  full_bin = "dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec --continue ./tmp/main -- --port=3333"
   include_dir = []
   include_ext = ["go", "tpl", "tmpl", "html", "templ"]
   include_file = []

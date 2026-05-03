@@ -1,0 +1,913 @@
+basePath: /api
+definitions:
+  dto.DeleteResponse:
+    properties:
+      count:
+        type: integer
+      deleted_ids:
+        items:
+          type: integer
+        type: array
+    type: object
+  dto.EducationDTO:
+    properties:
+      course:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      organization:
+        type: string
+      year:
+        type: integer
+    type: object
+  dto.EducationListResponse:
+    properties:
+      content:
+        items:
+          $ref: '#/definitions/dto.EducationDTO'
+        type: array
+      page:
+        type: integer
+      size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.TagDTO:
+    properties:
+      hexColor:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  dto.TagListResponse:
+    properties:
+      content:
+        items:
+          $ref: '#/definitions/dto.TagDTO'
+        type: array
+      page:
+        type: integer
+      size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.TechListResponse:
+    properties:
+      content:
+        items:
+          $ref: '#/definitions/dto.TechnologyWithTagsDTO'
+        type: array
+      page:
+        type: integer
+      size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.TechnologyDTO:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      logoUrl:
+        type: string
+      title:
+        type: string
+    type: object
+  dto.TechnologyWithTagsDTO:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      logoUrl:
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/dto.TagDTO'
+        type: array
+      title:
+        type: string
+    type: object
+  dto.WorkHistoryDTO:
+    properties:
+      about:
+        type: string
+      id:
+        type: integer
+      logoUrl:
+        type: string
+      name:
+        type: string
+      periodEnd:
+        type: string
+      periodStart:
+        type: string
+      projects:
+        items:
+          type: string
+        type: array
+      whatIDid:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.WorkHistoryListResponse:
+    properties:
+      content:
+        items:
+          $ref: '#/definitions/dto.WorkHistoryWithTechnologiesDTO'
+        type: array
+      page:
+        type: integer
+      size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.WorkHistoryWithTechnologiesDTO:
+    properties:
+      about:
+        type: string
+      id:
+        type: integer
+      logoUrl:
+        type: string
+      name:
+        type: string
+      periodEnd:
+        type: string
+      periodStart:
+        type: string
+      projects:
+        items:
+          type: string
+        type: array
+      technologies:
+        items:
+          $ref: '#/definitions/dto.TechnologyWithTagsDTO'
+        type: array
+      whatIDid:
+        items:
+          type: string
+        type: array
+    type: object
+host: localhost:3333
+info:
+  contact: {}
+  description: 'REST API для CV-приложения: теги, технологии, история работы, образование.'
+  title: CV Backend API
+  version: "1.0"
+paths:
+  /edu:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Список ID для удаления
+        in: body
+        name: body
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              ids:
+                items:
+                  type: integer
+                type: array
+            type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DeleteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Удалить запись(и) образования
+      tags:
+      - education
+    get:
+      parameters:
+      - description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - description: Размер страницы
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.EducationListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Список записей образования
+      tags:
+      - education
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные записи
+        in: body
+        name: body
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              course:
+                type: string
+              name:
+                type: string
+              organization:
+                type: string
+              year:
+                type: integer
+            type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.EducationDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Создать запись образования
+      tags:
+      - education
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные записи
+        in: body
+        name: body
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              course:
+                type: string
+              id:
+                type: integer
+              name:
+                type: string
+              organization:
+                type: string
+              year:
+                type: integer
+            type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.EducationDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Обновить запись образования
+      tags:
+      - education
+  /edu/{eduID}:
+    get:
+      parameters:
+      - description: ID записи образования
+        in: path
+        name: eduID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.EducationDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить запись образования по ID
+      tags:
+      - education
+  /tag:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Список ID для удаления
+        in: body
+        name: body
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              ids:
+                items:
+                  type: integer
+                type: array
+            type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DeleteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Удалить тег(и)
+      tags:
+      - tags
+    get:
+      parameters:
+      - description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - description: Размер страницы
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TagListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Список тегов
+      tags:
+      - tags
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные тега
+        in: body
+        name: body
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              hexColor:
+                type: string
+              name:
+                type: string
+            type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.TagDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Создать тег
+      tags:
+      - tags
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные тега
+        in: body
+        name: body
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              hexColor:
+                type: string
+              id:
+                type: integer
+              name:
+                type: string
+            type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TagDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Обновить тег
+      tags:
+      - tags
+  /tag/{tagID}:
+    get:
+      parameters:
+      - description: ID тега
+        in: path
+        name: tagID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TagDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить тег по ID
+      tags:
+      - tags
+  /tech:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Список ID для удаления
+        in: body
+        name: body
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              ids:
+                items:
+                  type: integer
+                type: array
+            type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DeleteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Удалить технологию(и)
+      tags:
+      - technologies
+    get:
+      parameters:
+      - description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - description: Размер страницы
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TechListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Список технологий
+      tags:
+      - technologies
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные технологии
+        in: body
+        name: body
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              description:
+                type: string
+              logoUrl:
+                type: string
+              title:
+                type: string
+            type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.TechnologyDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Создать технологию
+      tags:
+      - technologies
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные технологии
+        in: body
+        name: body
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              description:
+                type: string
+              id:
+                type: integer
+              logoUrl:
+                type: string
+              title:
+                type: string
+            type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TechnologyDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Обновить технологию
+      tags:
+      - technologies
+  /tech/{techID}:
+    get:
+      parameters:
+      - description: ID технологии
+        in: path
+        name: techID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TechnologyWithTagsDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить технологию по ID
+      tags:
+      - technologies
+  /wh:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Список ID для удаления
+        in: body
+        name: body
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              ids:
+                items:
+                  type: integer
+                type: array
+            type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DeleteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Удалить запись(и) истории работы
+      tags:
+      - work-history
+    get:
+      parameters:
+      - description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - description: Размер страницы
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.WorkHistoryListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Список истории работы
+      tags:
+      - work-history
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные записи
+        in: body
+        name: body
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              about:
+                type: string
+              logoUrl:
+                type: string
+              name:
+                type: string
+              periodEnd:
+                type: string
+              periodStart:
+                type: string
+              projects:
+                items:
+                  type: string
+                type: array
+              whatIDid:
+                items:
+                  type: string
+                type: array
+            type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.WorkHistoryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Создать запись истории работы
+      tags:
+      - work-history
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные записи
+        in: body
+        name: body
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              about:
+                type: string
+              id:
+                type: integer
+              logoUrl:
+                type: string
+              name:
+                type: string
+              periodEnd:
+                type: string
+              periodStart:
+                type: string
+              projects:
+                items:
+                  type: string
+                type: array
+              whatIDid:
+                items:
+                  type: string
+                type: array
+            type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.WorkHistoryDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Обновить запись истории работы
+      tags:
+      - work-history
+  /wh/{whID}:
+    get:
+      parameters:
+      - description: ID записи истории работы
+        in: path
+        name: whID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.WorkHistoryWithTechnologiesDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить запись истории работы по ID
+      tags:
+      - work-history
+swagger: "2.0"
