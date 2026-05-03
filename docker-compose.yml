@@ -48,6 +48,11 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=postgres
       - MIGRATION_PATH=migrations
+      - ADMIN_USER=admin
+      - ADMIN_PASSWORD=admin
+      - ALLOWED_ORIGIN=http://localhost:4200
+      - LOG_LEVEL=info
+      - APP_ENV=development
 
     depends_on:
       postgres:

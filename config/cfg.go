@@ -12,6 +12,8 @@ type Config struct {
 	LogLevel         string
 	AppEnv           string
 	AllowedOrigin    string
+	AdminUser        string
+	AdminPassword    string
 }
 
 var cfg Config
@@ -32,6 +34,8 @@ func init() {
 			LogLevel:         envs.LogLevel,
 			AppEnv:           envs.AppEnv,
 			AllowedOrigin:    envs.AllowedOrigin,
+			AdminUser:        envs.AdminUser,
+			AdminPassword:    envs.AdminPassword,
 		}
 	}
 }

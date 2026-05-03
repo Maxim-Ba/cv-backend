@@ -12,7 +12,7 @@ import (
 	"github.com/Maxim-Ba/cv-backend/internal/view/components/layout"
 )
 
-func Login(user string) templ.Component {
+func Login(errorMessage string, csrfToken string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -33,7 +33,7 @@ func Login(user string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = layout.Base("Вход", loginPage(user), user).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layout.Base("Вход", loginPage(errorMessage, csrfToken), "").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -41,7 +41,7 @@ func Login(user string) templ.Component {
 	})
 }
 
-func loginPage(errorMessage string) templ.Component {
+func loginPage(errorMessage string, csrfToken string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -74,7 +74,7 @@ func loginPage(errorMessage string) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(errorMessage)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/login.templ`, Line: 18, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/components/pages/login.templ`, Line: 17, Col: 70}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -85,7 +85,20 @@ func loginPage(errorMessage string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<form method=\"POST\" action=\"/admin/login\"><div class=\"mb-3\"><label for=\"username\" class=\"form-label\">Логин</label> <input type=\"text\" class=\"form-control\" id=\"username\" name=\"username\" required></div><div class=\"mb-3\"><label for=\"password\" class=\"form-label\">Пароль</label> <input type=\"password\" class=\"form-control\" id=\"password\" name=\"password\" required></div><button type=\"submit\" class=\"btn btn-primary\">Войти</button></form></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<form method=\"POST\" action=\"/admin/login\"><input type=\"hidden\" name=\"csrf_token\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var4 string
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(csrfToken)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/components/pages/login.templ`, Line: 20, Col: 80}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\"><div class=\"mb-3\"><label for=\"username\" class=\"form-label\">Логин</label> <input type=\"text\" class=\"form-control\" id=\"username\" name=\"username\" required></div><div class=\"mb-3\"><label for=\"password\" class=\"form-label\">Пароль</label> <input type=\"password\" class=\"form-control\" id=\"password\" name=\"password\" required></div><button type=\"submit\" class=\"btn btn-primary\">Войти</button></form></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

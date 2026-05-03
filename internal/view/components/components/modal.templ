@@ -1,9 +1,9 @@
 package components
 
 import (
-	"github.com/a-h/templ"
-	"github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	"strconv"
+
+	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 )
 
 type EntityFormData struct {
@@ -30,7 +30,13 @@ templ ModalForm(data EntityFormData) {
 		<div class="modal-dialog modal-lg" role="document">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title"> { if data.EntityID > 0 { "Редактировать " } else {  "Добавить " } } { data.EntityName } </h5>
+					<h5 class="modal-title">
+						if data.EntityID > 0 {
+							Редактировать { data.EntityName }
+						} else {
+							Добавить { data.EntityName }
+						}
+					</h5>
 					<a href="?" class="close" aria-label="Close">
 						<span aria-hidden="true">&times;</span>
 					</a>
@@ -39,22 +45,42 @@ templ ModalForm(data EntityFormData) {
 					<form method="POST" action={ data.ActionURL }>
 						<input type="hidden" name="_method" value={ data.Method }/>
 						<input type="hidden" name="csrf_token" value={ data.CSRFToken }/>
-						{ if data.EntityID > 0 {
+						if data.EntityID > 0 {
 							<input type="hidden" name="id" value={ strconv.FormatInt(data.EntityID, 10) }/>
-						} }
-						
-						{ for _, field := range data.Fields {
+						}
+						for _, field := range data.Fields {
 							<div class="mb-3">
 								<label for={ "field-" + field.Name } class="form-label">{ field.Label }</label>
-								{ if field.IsTextArea {
+								if field.IsTextArea {
 									<textarea
 										class="form-control"
 										id={ "field-" + field.Name }
 										name={ field.Name }
 										rows="3"
 										placeholder={ field.Placeholder }
-										{ if field.Required { required } }
+										required?={ field.Required }
 									>{ field.Value }</textarea>
+								} else if field.Type == "color" {
+									<div class="input-group">
+										<input
+											type="color"
+											class="form-control form-control-color"
+											id={ "field-" + field.Name + "-picker" }
+											value={ field.Value }
+											oninput="adminSyncColorToText(this)"
+											title="Выберите цвет"
+										/>
+										<input
+											type="text"
+											class="form-control font-monospace"
+											id={ "field-" + field.Name }
+											name={ field.Name }
+											value={ field.Value }
+											placeholder={ field.Placeholder }
+											required?={ field.Required }
+											oninput="adminSyncTextToPicker(this)"
+										/>
+									</div>
 								} else {
 									<input
 										type={ field.Type }
@@ -63,16 +89,19 @@ templ ModalForm(data EntityFormData) {
 										name={ field.Name }
 										value={ field.Value }
 										placeholder={ field.Placeholder }
-										{ if field.Required { required } }
+										required?={ field.Required }
 									/>
-								} }
+								}
 							</div>
-						} }
-						
+						}
 						<div class="modal-footer">
 							<a href="?" class="btn btn-secondary">Отмена</a>
 							<button type="submit" class="btn btn-primary">
-								{ if data.EntityID > 0 { "Сохранить" } else { "Создать" } }
+								if data.EntityID > 0 {
+									Сохранить
+								} else {
+									Создать
+								}
 							</button>
 						</div>
 					</form>
@@ -90,7 +119,7 @@ func TechnologyFormData(tech models.Technology, csrfToken string, isEdit bool) E
 	
 	return EntityFormData{
 		EntityName: "Technology",
-		ActionURL:  "/api/tech",
+		ActionURL:  "/admin/tech",
 		Method:     method,
 		EntityID:   tech.ID,
 		CSRFToken:  csrfToken,
@@ -124,6 +153,156 @@ func TechnologyFormData(tech models.Technology, csrfToken string, isEdit bool) E
 	}
 }
 
+func EducationFormData(edu models.Education, csrfToken string, isEdit bool) EntityFormData {
+	method := "POST"
+	if isEdit {
+		method = "PUT"
+	}
+
+	return EntityFormData{
+		EntityName: "Education",
+		ActionURL:  "/admin/education",
+		Method:     method,
+		EntityID:   edu.ID,
+		CSRFToken:  csrfToken,
+		Fields: []FormField{
+			{
+				Name:        "name",
+				Label:       "Название",
+				Type:        "text",
+				Value:       edu.Name.String,
+				Placeholder: "Введите название учебного заведения",
+				Required:    true,
+			},
+			{
+				Name:        "year",
+				Label:       "Год окончания",
+				Type:        "number",
+				Value:       strconv.Itoa(int(edu.Year)),
+				Placeholder: "2020",
+				Required:    true,
+			},
+			{
+				Name:        "course",
+				Label:       "Направление / курс",
+				Type:        "text",
+				Value:       edu.Course,
+				Placeholder: "Программная инженерия",
+				Required:    true,
+			},
+			{
+				Name:        "organization",
+				Label:       "Организация",
+				Type:        "text",
+				Value:       edu.Organization,
+				Placeholder: "МГТУ им. Баумана",
+				Required:    true,
+			},
+		},
+	}
+}
+
+func WorkHistoryFormData(wh models.WorkHistory, csrfToken string, isEdit bool) EntityFormData {
+	method := "POST"
+	if isEdit {
+		method = "PUT"
+	}
+
+	periodStart := ""
+	if wh.PeriodStart.Valid {
+		periodStart = wh.PeriodStart.Time.Format("2006-01-02")
+	}
+	periodEnd := ""
+	if wh.PeriodEnd.Valid {
+		periodEnd = wh.PeriodEnd.Time.Format("2006-01-02")
+	}
+
+	whatIDid := ""
+	for i, item := range wh.WhatIDid {
+		if i > 0 {
+			whatIDid += "\n"
+		}
+		whatIDid += item
+	}
+
+	projects := ""
+	for i, item := range wh.Projects {
+		if i > 0 {
+			projects += "\n"
+		}
+		projects += item
+	}
+
+	return EntityFormData{
+		EntityName: "WorkHistory",
+		ActionURL:  "/admin/history",
+		Method:     method,
+		EntityID:   wh.ID,
+		CSRFToken:  csrfToken,
+		Fields: []FormField{
+			{
+				Name:        "name",
+				Label:       "Название компании",
+				Type:        "text",
+				Value:       wh.Name,
+				Placeholder: "ООО Рога и Копыта",
+				Required:    true,
+			},
+			{
+				Name:        "about",
+				Label:       "О компании",
+				Type:        "text",
+				Value:       wh.About,
+				Placeholder: "Краткое описание компании",
+				IsTextArea:  true,
+				Required:    false,
+			},
+			{
+				Name:        "logoUrl",
+				Label:       "URL логотипа",
+				Type:        "url",
+				Value:       string(wh.LogoUrl),
+				Placeholder: "https://example.com/logo.png",
+				Required:    false,
+			},
+			{
+				Name:        "periodStart",
+				Label:       "Начало работы",
+				Type:        "date",
+				Value:       periodStart,
+				Placeholder: "",
+				Required:    true,
+			},
+			{
+				Name:        "periodEnd",
+				Label:       "Конец работы (пусто = по наст. время)",
+				Type:        "date",
+				Value:       periodEnd,
+				Placeholder: "",
+				Required:    false,
+			},
+			{
+				Name:        "whatIDid",
+				Label:       "Что делал (каждый пункт с новой строки)",
+				Type:        "text",
+				Value:       whatIDid,
+				Placeholder: "Разрабатывал микросервисы\nПроводил code review",
+				IsTextArea:  true,
+				Required:    false,
+			},
+			{
+				Name:        "projects",
+				Label:       "Проекты (каждый с новой строки)",
+				Type:        "text",
+				Value:       projects,
+				Placeholder: "Проект А\nПроект Б",
+				IsTextArea:  true,
+				Required:    false,
+			},
+		},
+	}
+}
+
 func TagFormData(tag models.Tag, csrfToken string, isEdit bool) EntityFormData {
 	method := "POST"
 	if isEdit {
@@ -132,7 +311,7 @@ func TagFormData(tag models.Tag, csrfToken string, isEdit bool) EntityFormData {
 	
 	return EntityFormData{
 		EntityName: "Tag",
-		ActionURL:  "/api/tag",
+		ActionURL:  "/admin/tag",
 		Method:     method,
 		EntityID:   tag.ID,
 		CSRFToken:  csrfToken,
@@ -148,7 +327,7 @@ func TagFormData(tag models.Tag, csrfToken string, isEdit bool) EntityFormData {
 			{
 				Name:        "hexColor",
 				Label:       "Цвет (HEX)",
-				Type:        "text",
+				Type:        "color",
 				Value:       tag.HexColor,
 				Placeholder: "#FF0077",
 				Required:    true,

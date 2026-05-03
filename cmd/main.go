@@ -88,7 +88,7 @@ func initApplication(ctx context.Context, db *dbconn.DB, cfg *config.Config) (*r
 	}
 	
 	// Инициализация роутера с зависимостями
-	r := router.New(deps, cfg.AllowedOrigin)
+	r := router.New(deps, cfg.AllowedOrigin, cfg.AdminUser, cfg.AdminPassword)
 	return r, nil
 }
 

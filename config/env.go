@@ -15,9 +15,11 @@ type Envs struct {
 	PostgresDB       string `env:"POSTGRES_DB"`
 	ServerAddr       string `env:"SERVER_ADDRESS"`
 	MigrationPath    string `env:"MIGRATION_PATH"`
-	LogLevel         string `env:"LOG_LEVEL" default:"error"`
-	AppEnv           string `env:"APP_ENV" default:"development"`
-	AllowedOrigin    string `env:"ALLOWED_ORIGIN" default:"http://localhost:4200"`
+	LogLevel         string `env:"LOG_LEVEL" envDefault:"error"`
+	AppEnv           string `env:"APP_ENV" envDefault:"development"`
+	AllowedOrigin    string `env:"ALLOWED_ORIGIN" envDefault:"http://localhost:4200"`
+	AdminUser        string `env:"ADMIN_USER" envDefault:"admin"`
+	AdminPassword    string `env:"ADMIN_PASSWORD" envDefault:"admin"`
 }
 
 func parseEnv() (*Envs, error) {
