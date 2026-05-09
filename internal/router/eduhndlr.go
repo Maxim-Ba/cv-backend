@@ -11,6 +11,7 @@ import (
 	_ "github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	"github.com/Maxim-Ba/cv-backend/internal/services"
+	"github.com/Maxim-Ba/cv-backend/pkg/apierrors"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
@@ -33,34 +34,31 @@ func NewEducationHandler(es *services.EducationService) *EducationHandler {
 // @Produce      json
 // @Param        eduID  path  int  true  "ID записи образования"
 // @Success      200  {object}  dto.EducationDTO
-// @Failure      400  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  apierrors.APIError
+// @Failure      404  {object}  apierrors.APIError
+// @Failure      500  {object}  apierrors.APIError
 // @Router       /edu/{eduID} [get]
 func (eh *EducationHandler) EducationGet(w http.ResponseWriter, r *http.Request) {
 	eduIDStr := chi.URLParam(r, "eduID")
 	eduID, err := strconv.ParseInt(eduIDStr, 10, 64)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Invalid education ID",
-		})
+		apierrors.WriteError(w, http.StatusBadRequest, "invalid education ID")
 		return
 	}
 
 	education, err := eh.service.Get(eduID)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
-		})
+		if apierrors.IsNotFound(err) {
+			apierrors.WriteError(w, http.StatusNotFound, "education not found")
+			return
+		}
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(education); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		apierrors.WriteError(w, http.StatusInternalServerError, "failed to encode response")
 	}
 }
 
@@ -72,25 +70,19 @@ func (eh *EducationHandler) EducationGet(w http.ResponseWriter, r *http.Request)
 // @Param        page  query  int  false  "Номер страницы"
 // @Param        size  query  int  false  "Размер страницы"
 // @Success      200  {object}  dto.EducationListResponse
-// @Failure      500  {object}  map[string]string
+// @Failure      500  {object}  apierrors.APIError
 // @Router       /edu [get]
 func (eh *EducationHandler) EducationList(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	pagebleRq := entityreqdecorator.ParseQueryParams(queryParams)
 	list, err := eh.service.List(pagebleRq)
-
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
-		})
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(list); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		apierrors.WriteError(w, http.StatusInternalServerError, "failed to encode response")
 	}
 }
 
@@ -102,8 +94,8 @@ func (eh *EducationHandler) EducationList(w http.ResponseWriter, r *http.Request
 // @Produce      json
 // @Param        body  body  object{name=string,year=int32,course=string,organization=string}  true  "Данные записи"
 // @Success      201  {object}  dto.EducationDTO
-// @Failure      400  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  apierrors.APIError
+// @Failure      500  {object}  apierrors.APIError
 // @Router       /edu [post]
 func (eh *EducationHandler) EducationCreate(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
@@ -114,11 +106,7 @@ func (eh *EducationHandler) EducationCreate(w http.ResponseWriter, r *http.Reque
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Invalid request body",
-		})
+		apierrors.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -131,18 +119,14 @@ func (eh *EducationHandler) EducationCreate(w http.ResponseWriter, r *http.Reque
 
 	created, err := eh.service.Create(education)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
-		})
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(created); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		apierrors.WriteError(w, http.StatusInternalServerError, "failed to encode response")
 	}
 }
 
@@ -154,8 +138,9 @@ func (eh *EducationHandler) EducationCreate(w http.ResponseWriter, r *http.Reque
 // @Produce      json
 // @Param        body  body  object{ids=[]int64}  true  "Список ID для удаления"
 // @Success      200  {object}  dto.DeleteResponse
-// @Failure      400  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  apierrors.APIError
+// @Failure      404  {object}  apierrors.APIError
+// @Failure      500  {object}  apierrors.APIError
 // @Router       /edu [delete]
 func (eh *EducationHandler) EducationDelete(w http.ResponseWriter, r *http.Request) {
 	var deleteReq struct {
@@ -163,11 +148,7 @@ func (eh *EducationHandler) EducationDelete(w http.ResponseWriter, r *http.Reque
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&deleteReq); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Invalid request body",
-		})
+		apierrors.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -186,16 +167,16 @@ func (eh *EducationHandler) EducationDelete(w http.ResponseWriter, r *http.Reque
 	}
 
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
-		})
+		if apierrors.IsNotFound(err) {
+			apierrors.WriteError(w, http.StatusNotFound, "education not found")
+			return
+		}
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	json.NewEncoder(w).Encode(map[string]interface{}{ //nolint:errcheck
 		"deleted_ids": deletedIDs,
 		"count":       len(deletedIDs),
 	})
@@ -209,8 +190,9 @@ func (eh *EducationHandler) EducationDelete(w http.ResponseWriter, r *http.Reque
 // @Produce      json
 // @Param        body  body  object{id=int64,name=string,year=int32,course=string,organization=string}  true  "Данные записи"
 // @Success      200  {object}  dto.EducationDTO
-// @Failure      400  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  apierrors.APIError
+// @Failure      404  {object}  apierrors.APIError
+// @Failure      500  {object}  apierrors.APIError
 // @Router       /edu [put]
 func (eh *EducationHandler) EducationUpdate(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
@@ -222,11 +204,7 @@ func (eh *EducationHandler) EducationUpdate(w http.ResponseWriter, r *http.Reque
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Invalid request body",
-		})
+		apierrors.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -240,16 +218,16 @@ func (eh *EducationHandler) EducationUpdate(w http.ResponseWriter, r *http.Reque
 
 	updated, err := eh.service.Update(education)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
-		})
+		if apierrors.IsNotFound(err) {
+			apierrors.WriteError(w, http.StatusNotFound, "education not found")
+			return
+		}
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(updated); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		apierrors.WriteError(w, http.StatusInternalServerError, "failed to encode response")
 	}
 }

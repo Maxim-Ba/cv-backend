@@ -29,7 +29,7 @@ type TagService struct {
 	repo TagManager
 }
 
-func NewTagServise( repo TagManager) *TagService {
+func NewTagService(repo TagManager) *TagService {
 	return &TagService{
 		repo: repo,
 	}

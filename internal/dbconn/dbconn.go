@@ -38,11 +38,26 @@ func New(cfg config.Config) (*DB, error) {
 	db.SetMaxIdleConns(25)
 	db.SetConnMaxLifetime(5 * time.Minute)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := db.PingContext(ctx); err != nil {
-		return nil, err
+	const maxAttempts = 5
+	var lastErr error
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		lastErr = db.PingContext(ctx)
+		cancel()
+		if lastErr == nil {
+			break
+		}
+		slog.Warn("database not ready, retrying",
+			"attempt", attempt,
+			"max", maxAttempts,
+			"error", lastErr,
+		)
+		if attempt < maxAttempts {
+			time.Sleep(2 * time.Second)
+		}
+	}
+	if lastErr != nil {
+		return nil, fmt.Errorf("could not connect to database after %d attempts: %w", maxAttempts, lastErr)
 	}
 	checkDerectory(cfg)
 	if err := applyMigrations(db, cfg.MigrationPath); err != nil {

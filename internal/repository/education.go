@@ -7,6 +7,7 @@ import (
 	"github.com/lib/pq"
 
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
+	"github.com/Maxim-Ba/cv-backend/pkg/apierrors"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
@@ -65,7 +66,7 @@ func (e *EducationRepo) Delete(id int64) (int64, error) {
 	}
 
 	if rowsAffected == 0 {
-		return 0, fmt.Errorf("education with id %d not found", id)
+		return 0, fmt.Errorf("education with id %d: %w", id, apierrors.ErrNotFound)
 	}
 
 	return id, nil
@@ -85,7 +86,7 @@ func (e *EducationRepo) Get(id int64) (models.Education, error) {
 	)
 	
 	if err == sql.ErrNoRows {
-		return models.Education{}, fmt.Errorf("education with id %d not found", id)
+		return models.Education{}, fmt.Errorf("education with id %d: %w", id, apierrors.ErrNotFound)
 	}
 	if err != nil {
 		return models.Education{}, fmt.Errorf("failed to get education: %w", err)
@@ -201,7 +202,7 @@ func (e *EducationRepo) Update(education models.Education) (models.Education, er
 	)
 
 	if err == sql.ErrNoRows {
-		return models.Education{}, fmt.Errorf("education with id %d not found", education.ID)
+		return models.Education{}, fmt.Errorf("education with id %d: %w", education.ID, apierrors.ErrNotFound)
 	}
 	if err != nil {
 		return models.Education{}, fmt.Errorf("failed to update education: %w", err)

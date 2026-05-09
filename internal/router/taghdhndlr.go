@@ -10,14 +10,15 @@ import (
 	_ "github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	"github.com/Maxim-Ba/cv-backend/internal/services"
+	"github.com/Maxim-Ba/cv-backend/pkg/apierrors"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
 type TagHandler struct {
-	service services.TagService
+	service *services.TagService
 }
 
-func NewTagHandler(ts services.TagService) *TagHandler {
+func NewTagHandler(ts *services.TagService) *TagHandler {
 	return &TagHandler{
 		service: ts,
 	}
@@ -30,34 +31,31 @@ func NewTagHandler(ts services.TagService) *TagHandler {
 // @Produce      json
 // @Param        tagID  path  int  true  "ID тега"
 // @Success      200  {object}  dto.TagDTO
-// @Failure      400  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  apierrors.APIError
+// @Failure      404  {object}  apierrors.APIError
+// @Failure      500  {object}  apierrors.APIError
 // @Router       /tag/{tagID} [get]
 func (th *TagHandler) TagGet(w http.ResponseWriter, r *http.Request) {
 	tagIDStr := chi.URLParam(r, "tagID")
 	tagID, err := strconv.ParseInt(tagIDStr, 10, 64)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Invalid tag ID",
-		})
+		apierrors.WriteError(w, http.StatusBadRequest, "invalid tag ID")
 		return
 	}
 
 	tag, err := th.service.Get(tagID)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
-		})
+		if apierrors.IsNotFound(err) {
+			apierrors.WriteError(w, http.StatusNotFound, "tag not found")
+			return
+		}
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(tag); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		apierrors.WriteError(w, http.StatusInternalServerError, "failed to encode response")
 	}
 }
 // TagList получает список тегов с пагинацией
@@ -68,26 +66,20 @@ func (th *TagHandler) TagGet(w http.ResponseWriter, r *http.Request) {
 // @Param        page  query  int  false  "Номер страницы"
 // @Param        size  query  int  false  "Размер страницы"
 // @Success      200  {object}  dto.TagListResponse
-// @Failure      500  {object}  map[string]string
+// @Failure      500  {object}  apierrors.APIError
 // @Router       /tag [get]
 func (th *TagHandler) TagList(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	pagebleRq := entityreqdecorator.ParseQueryParams(queryParams)
 	list, err := th.service.List(pagebleRq)
-
 	if err != nil {
-        w.Header().Set("Content-Type", "application/json")
-        w.WriteHeader(http.StatusInternalServerError)
-        json.NewEncoder(w).Encode(map[string]string{
-            "error": err.Error(),
-        })
-        return
-    }
-    
-    w.Header().Set("Content-Type", "application/json")
-    if err := json.NewEncoder(w).Encode(list); err != nil {
-        http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-    }
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(list); err != nil {
+		apierrors.WriteError(w, http.StatusInternalServerError, "failed to encode response")
+	}
 }
 
 // TagCreate создает новый тег
@@ -98,8 +90,8 @@ func (th *TagHandler) TagList(w http.ResponseWriter, r *http.Request) {
 // @Produce      json
 // @Param        body  body  object{name=string,hexColor=string}  true  "Данные тега"
 // @Success      201  {object}  dto.TagDTO
-// @Failure      400  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  apierrors.APIError
+// @Failure      500  {object}  apierrors.APIError
 // @Router       /tag [post]
 func (th *TagHandler) TagCreate(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
@@ -108,11 +100,7 @@ func (th *TagHandler) TagCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Invalid request body",
-		})
+		apierrors.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -123,18 +111,14 @@ func (th *TagHandler) TagCreate(w http.ResponseWriter, r *http.Request) {
 
 	created, err := th.service.Create(tag)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
-		})
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(created); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		apierrors.WriteError(w, http.StatusInternalServerError, "failed to encode response")
 	}
 }
 
@@ -146,8 +130,9 @@ func (th *TagHandler) TagCreate(w http.ResponseWriter, r *http.Request) {
 // @Produce      json
 // @Param        body  body  object{ids=[]int64}  true  "Список ID для удаления"
 // @Success      200  {object}  dto.DeleteResponse
-// @Failure      400  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  apierrors.APIError
+// @Failure      404  {object}  apierrors.APIError
+// @Failure      500  {object}  apierrors.APIError
 // @Router       /tag [delete]
 func (th *TagHandler) TagDelete(w http.ResponseWriter, r *http.Request) {
 	var deleteReq struct {
@@ -155,11 +140,7 @@ func (th *TagHandler) TagDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&deleteReq); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Invalid request body",
-		})
+		apierrors.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -178,16 +159,16 @@ func (th *TagHandler) TagDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
-		})
+		if apierrors.IsNotFound(err) {
+			apierrors.WriteError(w, http.StatusNotFound, "tag not found")
+			return
+		}
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	json.NewEncoder(w).Encode(map[string]interface{}{ //nolint:errcheck
 		"deleted_ids": deletedIDs,
 		"count":       len(deletedIDs),
 	})
@@ -201,8 +182,9 @@ func (th *TagHandler) TagDelete(w http.ResponseWriter, r *http.Request) {
 // @Produce      json
 // @Param        body  body  object{id=int64,name=string,hexColor=string}  true  "Данные тега"
 // @Success      200  {object}  dto.TagDTO
-// @Failure      400  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  apierrors.APIError
+// @Failure      404  {object}  apierrors.APIError
+// @Failure      500  {object}  apierrors.APIError
 // @Router       /tag [put]
 func (th *TagHandler) TagUpdate(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
@@ -212,11 +194,7 @@ func (th *TagHandler) TagUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Invalid request body",
-		})
+		apierrors.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -228,16 +206,16 @@ func (th *TagHandler) TagUpdate(w http.ResponseWriter, r *http.Request) {
 
 	updated, err := th.service.Update(tag)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
-		})
+		if apierrors.IsNotFound(err) {
+			apierrors.WriteError(w, http.StatusNotFound, "tag not found")
+			return
+		}
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(updated); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		apierrors.WriteError(w, http.StatusInternalServerError, "failed to encode response")
 	}
 }

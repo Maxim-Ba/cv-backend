@@ -12,6 +12,7 @@ import (
 	_ "github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	"github.com/Maxim-Ba/cv-backend/internal/services"
+	"github.com/Maxim-Ba/cv-backend/pkg/apierrors"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
@@ -34,34 +35,31 @@ func NewWorkHistoryHandler(whs *services.WorkHistoryService) *WorkHistoryHandler
 // @Produce      json
 // @Param        whID  path  int  true  "ID записи истории работы"
 // @Success      200  {object}  dto.WorkHistoryWithTechnologiesDTO
-// @Failure      400  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  apierrors.APIError
+// @Failure      404  {object}  apierrors.APIError
+// @Failure      500  {object}  apierrors.APIError
 // @Router       /wh/{whID} [get]
 func (wh *WorkHistoryHandler) WorkHistoryGet(w http.ResponseWriter, r *http.Request) {
 	whIDStr := chi.URLParam(r, "whID")
 	whID, err := strconv.ParseInt(whIDStr, 10, 64)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Invalid work history ID",
-		})
+		apierrors.WriteError(w, http.StatusBadRequest, "invalid work history ID")
 		return
 	}
 
 	workHistory, err := wh.service.GetWithTechnologies(whID)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
-		})
+		if apierrors.IsNotFound(err) {
+			apierrors.WriteError(w, http.StatusNotFound, "work history not found")
+			return
+		}
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(workHistory); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		apierrors.WriteError(w, http.StatusInternalServerError, "failed to encode response")
 	}
 }
 
@@ -73,25 +71,19 @@ func (wh *WorkHistoryHandler) WorkHistoryGet(w http.ResponseWriter, r *http.Requ
 // @Param        page  query  int  false  "Номер страницы"
 // @Param        size  query  int  false  "Размер страницы"
 // @Success      200  {object}  dto.WorkHistoryListResponse
-// @Failure      500  {object}  map[string]string
+// @Failure      500  {object}  apierrors.APIError
 // @Router       /wh [get]
 func (wh *WorkHistoryHandler) WorkHistoryList(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	pagebleRq := entityreqdecorator.ParseQueryParams(queryParams)
 	list, err := wh.service.ListWithTechnologies(pagebleRq)
-
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
-		})
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(list); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		apierrors.WriteError(w, http.StatusInternalServerError, "failed to encode response")
 	}
 }
 
@@ -103,8 +95,8 @@ func (wh *WorkHistoryHandler) WorkHistoryList(w http.ResponseWriter, r *http.Req
 // @Produce      json
 // @Param        body  body  object{name=string,about=string,logoUrl=string,periodStart=string,periodEnd=string,whatIDid=[]string,projects=[]string}  true  "Данные записи"
 // @Success      201  {object}  dto.WorkHistoryDTO
-// @Failure      400  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  apierrors.APIError
+// @Failure      500  {object}  apierrors.APIError
 // @Router       /wh [post]
 func (wh *WorkHistoryHandler) WorkHistoryCreate(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
@@ -118,11 +110,7 @@ func (wh *WorkHistoryHandler) WorkHistoryCreate(w http.ResponseWriter, r *http.R
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Invalid request body",
-		})
+		apierrors.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -153,18 +141,14 @@ func (wh *WorkHistoryHandler) WorkHistoryCreate(w http.ResponseWriter, r *http.R
 
 	created, err := wh.service.Create(workHistory)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
-		})
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(created); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		apierrors.WriteError(w, http.StatusInternalServerError, "failed to encode response")
 	}
 }
 
@@ -176,8 +160,9 @@ func (wh *WorkHistoryHandler) WorkHistoryCreate(w http.ResponseWriter, r *http.R
 // @Produce      json
 // @Param        body  body  object{ids=[]int64}  true  "Список ID для удаления"
 // @Success      200  {object}  dto.DeleteResponse
-// @Failure      400  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  apierrors.APIError
+// @Failure      404  {object}  apierrors.APIError
+// @Failure      500  {object}  apierrors.APIError
 // @Router       /wh [delete]
 func (wh *WorkHistoryHandler) WorkHistoryDelete(w http.ResponseWriter, r *http.Request) {
 	var deleteReq struct {
@@ -185,11 +170,7 @@ func (wh *WorkHistoryHandler) WorkHistoryDelete(w http.ResponseWriter, r *http.R
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&deleteReq); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Invalid request body",
-		})
+		apierrors.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -208,16 +189,16 @@ func (wh *WorkHistoryHandler) WorkHistoryDelete(w http.ResponseWriter, r *http.R
 	}
 
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
-		})
+		if apierrors.IsNotFound(err) {
+			apierrors.WriteError(w, http.StatusNotFound, "work history not found")
+			return
+		}
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	json.NewEncoder(w).Encode(map[string]interface{}{ //nolint:errcheck
 		"deleted_ids": deletedIDs,
 		"count":       len(deletedIDs),
 	})
@@ -231,8 +212,9 @@ func (wh *WorkHistoryHandler) WorkHistoryDelete(w http.ResponseWriter, r *http.R
 // @Produce      json
 // @Param        body  body  object{id=int64,name=string,about=string,logoUrl=string,periodStart=string,periodEnd=string,whatIDid=[]string,projects=[]string}  true  "Данные записи"
 // @Success      200  {object}  dto.WorkHistoryDTO
-// @Failure      400  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  apierrors.APIError
+// @Failure      404  {object}  apierrors.APIError
+// @Failure      500  {object}  apierrors.APIError
 // @Router       /wh [put]
 func (wh *WorkHistoryHandler) WorkHistoryUpdate(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
@@ -247,11 +229,7 @@ func (wh *WorkHistoryHandler) WorkHistoryUpdate(w http.ResponseWriter, r *http.R
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Invalid request body",
-		})
+		apierrors.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -283,16 +261,16 @@ func (wh *WorkHistoryHandler) WorkHistoryUpdate(w http.ResponseWriter, r *http.R
 
 	updated, err := wh.service.Update(workHistory)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
-		})
+		if apierrors.IsNotFound(err) {
+			apierrors.WriteError(w, http.StatusNotFound, "work history not found")
+			return
+		}
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(updated); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		apierrors.WriteError(w, http.StatusInternalServerError, "failed to encode response")
 	}
 }

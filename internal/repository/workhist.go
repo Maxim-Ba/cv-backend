@@ -9,6 +9,7 @@ import (
 
 	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
+	"github.com/Maxim-Ba/cv-backend/pkg/apierrors"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
@@ -67,7 +68,7 @@ func (w *WorkHistoryRepo) Delete(id int64) (int64, error) {
 	}
 
 	if rowsAffected == 0 {
-		return 0, fmt.Errorf("work history with id %d not found", id)
+		return 0, fmt.Errorf("work history with id %d: %w", id, apierrors.ErrNotFound)
 	}
 
 	return id, nil
@@ -94,7 +95,7 @@ func (w *WorkHistoryRepo) Get(id int64) (models.WorkHistory, error) {
 	)
 	
 	if err == sql.ErrNoRows {
-		return models.WorkHistory{}, fmt.Errorf("work history with id %d not found", id)
+		return models.WorkHistory{}, fmt.Errorf("work history with id %d: %w", id, apierrors.ErrNotFound)
 	}
 	if err != nil {
 		return models.WorkHistory{}, fmt.Errorf("failed to get work history: %w", err)

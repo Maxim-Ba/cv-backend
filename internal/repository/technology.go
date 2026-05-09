@@ -8,6 +8,7 @@ import (
 
 	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
+	"github.com/Maxim-Ba/cv-backend/pkg/apierrors"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
@@ -66,7 +67,7 @@ func (t *TechnologyRepo) Delete(id int64) (int64, error) {
 	}
 
 	if rowsAffected == 0 {
-		return 0, fmt.Errorf("technology with id %d not found", id)
+		return 0, fmt.Errorf("technology with id %d: %w", id, apierrors.ErrNotFound)
 	}
 
 	return id, nil
@@ -85,7 +86,7 @@ func (t *TechnologyRepo) Get(id int64) (models.Technology, error) {
 	)
 	
 	if err == sql.ErrNoRows {
-		return models.Technology{}, fmt.Errorf("technology with id %d not found", id)
+		return models.Technology{}, fmt.Errorf("technology with id %d: %w", id, apierrors.ErrNotFound)
 	}
 	if err != nil {
 		return models.Technology{}, fmt.Errorf("failed to get technology: %w", err)
@@ -185,7 +186,7 @@ func (t *TechnologyRepo) Update(technology models.Technology) (models.Technology
 	)
 
 	if err == sql.ErrNoRows {
-		return models.Technology{}, fmt.Errorf("technology with id %d not found", technology.ID)
+		return models.Technology{}, fmt.Errorf("technology with id %d: %w", technology.ID, apierrors.ErrNotFound)
 	}
 	if err != nil {
 		return models.Technology{}, fmt.Errorf("failed to update technology: %w", err)

@@ -7,6 +7,7 @@ import (
 	"github.com/lib/pq"
 
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
+	"github.com/Maxim-Ba/cv-backend/pkg/apierrors"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
@@ -62,7 +63,7 @@ func (t *TagRepo) Delete(id int64) (int64, error) {
 	}
 
 	if rowsAffected == 0 {
-		return 0, fmt.Errorf("tag with id %d not found", id)
+		return 0, fmt.Errorf("tag with id %d: %w", id, apierrors.ErrNotFound)
 	}
 
 	return id, nil
@@ -76,7 +77,7 @@ func (t *TagRepo) Get(id int64) (models.Tag, error) {
 	err := t.db.QueryRow(query, id).Scan(&tag.ID, &tag.Name, &tag.HexColor)
 	
 	if err == sql.ErrNoRows {
-		return models.Tag{}, fmt.Errorf("tag with id %d not found", id)
+		return models.Tag{}, fmt.Errorf("tag with id %d: %w", id, apierrors.ErrNotFound)
 	}
 	if err != nil {
 		return models.Tag{}, fmt.Errorf("failed to get tag: %w", err)
@@ -163,7 +164,7 @@ func (t *TagRepo) Update(tag models.Tag) (models.Tag, error) {
 	)
 
 	if err == sql.ErrNoRows {
-		return models.Tag{}, fmt.Errorf("tag with id %d not found", tag.ID)
+		return models.Tag{}, fmt.Errorf("tag with id %d: %w", tag.ID, apierrors.ErrNotFound)
 	}
 	if err != nil {
 		return models.Tag{}, fmt.Errorf("failed to update tag: %w", err)

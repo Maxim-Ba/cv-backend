@@ -6,3 +6,4 @@ sqlc.exe
 repository.test.exe
 cv-backend.exe
 coverage.out
+cv.code-workspace

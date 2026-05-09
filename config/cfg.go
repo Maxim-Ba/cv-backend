@@ -36,6 +36,7 @@ func init() {
 			AllowedOrigin:    envs.AllowedOrigin,
 			AdminUser:        envs.AdminUser,
 			AdminPassword:    envs.AdminPassword,
+			Secret:           envs.AppSecret,
 		}
 	}
 }

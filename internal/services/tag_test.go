@@ -105,7 +105,7 @@ func TestTagService_Get(t *testing.T) {
 					return tt.mockTag, tt.mockError
 				},
 			}
-			service := NewTagServise(mockRepo)
+			service := NewTagService(mockRepo)
 
 			// Act
 			result, err := service.Get(tt.id)
@@ -181,7 +181,7 @@ func TestTagService_List(t *testing.T) {
 					return tt.mockResult, tt.mockError
 				},
 			}
-			service := NewTagServise(mockRepo)
+			service := NewTagService(mockRepo)
 
 			// Act
 			result, err := service.List(tt.request)
@@ -268,7 +268,7 @@ func TestTagService_Create(t *testing.T) {
 					return tt.mockTag, tt.mockError
 				},
 			}
-			service := NewTagServise(mockRepo)
+			service := NewTagService(mockRepo)
 
 			// Act
 			result, err := service.Create(tt.tag)
@@ -361,7 +361,7 @@ func TestTagService_Update(t *testing.T) {
 					return tt.mockTag, tt.mockError
 				},
 			}
-			service := NewTagServise(mockRepo)
+			service := NewTagService(mockRepo)
 
 			// Act
 			result, err := service.Update(tt.tag)
@@ -428,7 +428,7 @@ func TestTagService_Delete(t *testing.T) {
 					return tt.mockResult, tt.mockError
 				},
 			}
-			service := NewTagServise(mockRepo)
+			service := NewTagService(mockRepo)
 
 			// Act
 			result, err := service.Delete(tt.id)
@@ -494,7 +494,7 @@ func TestTagService_DeleteList(t *testing.T) {
 					return tt.mockResult, tt.mockError
 				},
 			}
-			service := NewTagServise(mockRepo)
+			service := NewTagService(mockRepo)
 
 			// Act
 			result, err := service.DeleteList(tt.ids)

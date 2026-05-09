@@ -65,14 +65,13 @@ func main() {
 	case <-ctx.Done():
 	}
 	if err := server.Shutdown(context.Background()); err != nil {
-		//TODO log
+		slog.Error("graceful shutdown failed", "error", err)
 		if err := server.Close(); err != nil {
-			slog.Error(err.Error())
-
+			slog.Error("forced server close failed", "error", err)
 		}
 	}
-	//TODO shutdown actions
 	wg.Wait()
+	slog.Info("server stopped")
 }
 
 func initApplication(ctx context.Context, db *dbconn.DB, cfg *config.Config) (*router.Router, error) {
@@ -81,14 +80,14 @@ func initApplication(ctx context.Context, db *dbconn.DB, cfg *config.Config) (*r
 	
 	// Инициализация сервисов с использованием репозиториев
 	deps := &router.Dependencies{
-		TagService:         services.NewTagServise(repos.TagRepository),
+		TagService:         services.NewTagService(repos.TagRepository),
 		TechService:        services.NewTechService(repos.TechRepository),
 		EducationService:   services.NewEducationService(repos.EducationRepository),
 		WorkHistoryService: services.NewWorkHistoryService(repos.WorkHistoryRepository),
 	}
 	
 	// Инициализация роутера с зависимостями
-	r := router.New(deps, cfg.AllowedOrigin, cfg.AdminUser, cfg.AdminPassword)
+	r := router.New(deps, db.GetConnection(), cfg.AllowedOrigin, cfg.AdminUser, cfg.AdminPassword, cfg.Secret)
 	return r, nil
 }
 

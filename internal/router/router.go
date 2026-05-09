@@ -3,6 +3,10 @@ package router
 import (
 	//...
 
+	"context"
+	"crypto/sha256"
+	"database/sql"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -26,6 +30,7 @@ import (
 type Router struct {
 	R           *chi.Mux
 	Deps        *Dependencies
+	db          *sql.DB
 	adminUser   string
 	adminPass   string
 	adminSecret string
@@ -38,15 +43,17 @@ type Dependencies struct {
 	WorkHistoryService *services.WorkHistoryService
 }
 
-func New(deps *Dependencies, allowedOrigin, adminUser, adminPass string) *Router {
+func New(deps *Dependencies, db *sql.DB, allowedOrigin, adminUser, adminPass, appSecret string) *Router {
 	r := chi.NewRouter()
 
+	csrfKey := sha256.Sum256([]byte(appSecret))
+	trustedOrigin := strings.TrimPrefix(strings.TrimPrefix(allowedOrigin, "https://"), "http://")
 	csrfMiddleware := csrf.Protect(
-		[]byte("32-byte-long-auth-key"),
+		csrfKey[:],
 		csrf.Secure(false),
 		csrf.FieldName("csrf_token"),
 		csrf.CookieName("csrf_token"),
-		csrf.TrustedOrigins([]string{"localhost:3333", "localhost"}),
+		csrf.TrustedOrigins([]string{trustedOrigin, "localhost:3333"}),
 		csrf.SameSite(csrf.SameSiteLaxMode),
 	)
 
@@ -64,14 +71,16 @@ func New(deps *Dependencies, allowedOrigin, adminUser, adminPass string) *Router
 	r.Use(middleware.RequestLogger(logger))
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
+	r.Use(middleware.Timeout(30 * time.Second))
 	r.Use(csrfMiddleware)
 
 	router := &Router{
 		R:           r,
 		Deps:        deps,
+		db:          db,
 		adminUser:   adminUser,
 		adminPass:   adminPass,
-		adminSecret: "cv-admin-session-secret",
+		adminSecret: appSecret,
 	}
 
 	h := createHandlers(deps)
@@ -98,8 +107,10 @@ func New(deps *Dependencies, allowedOrigin, adminUser, adminPass string) *Router
 	})
 
 	r.Get("/swagger/*", httpSwagger.WrapHandler)
+	r.Get("/healthz", router.healthCheck)
 
 	r.Route("/api", func(r chi.Router) {
+		r.Use(cacheControlMiddleware)
 		r.Route("/tag", func(r chi.Router) {
 			r.Get("/{tagID}", h.TagHandler.TagGet)
 			r.Get("/", h.TagHandler.TagList)
@@ -150,7 +161,7 @@ type handlers struct {
 }
 
 func createHandlers(deps *Dependencies) *handlers {
-	tagHandler := NewTagHandler(*deps.TagService)
+	tagHandler := NewTagHandler(deps.TagService)
 	techHandler := NewTechHandler(deps.TechService)
 	educationHandler := NewEducationHandler(deps.EducationService)
 	workHistoryHandler := NewWorkHistoryHandler(deps.WorkHistoryService)
@@ -172,6 +183,40 @@ func (rt *Router) adminDashboard(w http.ResponseWriter, r *http.Request) {
 func (rt *Router) adminLogout(w http.ResponseWriter, r *http.Request) {
 	m.ClearSessionCookie(w)
 	http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
+}
+
+func cacheControlMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			w.Header().Set("Cache-Control", "public, max-age=300, stale-while-revalidate=60")
+		} else {
+			w.Header().Set("Cache-Control", "no-store")
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (rt *Router) healthCheck(w http.ResponseWriter, r *http.Request) {
+	dbStatus := "ok"
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+	if err := rt.db.PingContext(ctx); err != nil {
+		slog.Error("health check: db ping failed", "error", err)
+		dbStatus = "unavailable"
+	}
+	status := "ok"
+	httpStatus := http.StatusOK
+	if dbStatus != "ok" {
+		status = "degraded"
+		httpStatus = http.StatusServiceUnavailable
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(httpStatus)
+	json.NewEncoder(w).Encode(map[string]string{ //nolint:errcheck
+		"status":  status,
+		"db":      dbStatus,
+		"version": "1.0.0",
+	})
 }
 
 func (rt *Router) adminLogin(w http.ResponseWriter, r *http.Request) {

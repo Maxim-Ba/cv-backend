@@ -20,6 +20,7 @@ type Envs struct {
 	AllowedOrigin    string `env:"ALLOWED_ORIGIN" envDefault:"http://localhost:4200"`
 	AdminUser        string `env:"ADMIN_USER" envDefault:"admin"`
 	AdminPassword    string `env:"ADMIN_PASSWORD" envDefault:"admin"`
+	AppSecret        string `env:"APP_SECRET" envDefault:"change-me-32-byte-secret-for-prod"`
 }
 
 func parseEnv() (*Envs, error) {
