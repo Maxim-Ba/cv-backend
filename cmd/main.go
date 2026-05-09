@@ -79,11 +79,18 @@ func initApplication(ctx context.Context, db *dbconn.DB, cfg *config.Config) (*r
 	repos := defineRepositories(db)
 	
 	// Инициализация сервисов с использованием репозиториев
+	tagSvc := services.NewTagService(repos.TagRepository)
+	techSvc := services.NewTechService(repos.TechRepository)
+	eduSvc := services.NewEducationService(repos.EducationRepository)
+	whSvc := services.NewWorkHistoryService(repos.WorkHistoryRepository)
+	pdfSvc := services.NewPDFService(repos.ProfileRepository, whSvc, techSvc, eduSvc)
+
 	deps := &router.Dependencies{
-		TagService:         services.NewTagService(repos.TagRepository),
-		TechService:        services.NewTechService(repos.TechRepository),
-		EducationService:   services.NewEducationService(repos.EducationRepository),
-		WorkHistoryService: services.NewWorkHistoryService(repos.WorkHistoryRepository),
+		TagService:         tagSvc,
+		TechService:        techSvc,
+		EducationService:   eduSvc,
+		WorkHistoryService: whSvc,
+		PDFService:         pdfSvc,
 	}
 	
 	// Инициализация роутера с зависимостями
@@ -97,6 +104,7 @@ type Repositories struct {
 	TechRepository        *repository.TechnologyRepo
 	EducationRepository   *repository.EducationRepo
 	WorkHistoryRepository *repository.WorkHistoryRepo
+	ProfileRepository     *repository.ProfileRepo
 }
 
 // defineRepositories создает экземпляры всех репозиториев
@@ -106,5 +114,6 @@ func defineRepositories(db *dbconn.DB) *Repositories {
 		TechRepository:        repository.NewTechnologyRepo(db.GetConnection()),
 		EducationRepository:   repository.NewEducationRepo(db.GetConnection()),
 		WorkHistoryRepository: repository.NewWorkHistoryRepo(db.GetConnection()),
+		ProfileRepository:     repository.NewProfileRepo(db.GetConnection()),
 	}
 }

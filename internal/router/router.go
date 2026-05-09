@@ -41,6 +41,7 @@ type Dependencies struct {
 	TechService        *services.TechService
 	EducationService   *services.EducationService
 	WorkHistoryService *services.WorkHistoryService
+	PDFService         *services.PDFService
 }
 
 func New(deps *Dependencies, db *sql.DB, allowedOrigin, adminUser, adminPass, appSecret string) *Router {
@@ -109,6 +110,8 @@ func New(deps *Dependencies, db *sql.DB, allowedOrigin, adminUser, adminPass, ap
 	r.Get("/swagger/*", httpSwagger.WrapHandler)
 	r.Get("/healthz", router.healthCheck)
 
+	r.Get("/api/download-cv", h.PDFHandler.DownloadCV)
+
 	r.Route("/api", func(r chi.Router) {
 		r.Use(cacheControlMiddleware)
 		r.Route("/tag", func(r chi.Router) {
@@ -158,6 +161,7 @@ type handlers struct {
 	TechHandler        *TechHandler
 	EducationHandler   *EducationHandler
 	WorkHistoryHandler *WorkHistoryHandler
+	PDFHandler         *PDFHandler
 }
 
 func createHandlers(deps *Dependencies) *handlers {
@@ -165,12 +169,14 @@ func createHandlers(deps *Dependencies) *handlers {
 	techHandler := NewTechHandler(deps.TechService)
 	educationHandler := NewEducationHandler(deps.EducationService)
 	workHistoryHandler := NewWorkHistoryHandler(deps.WorkHistoryService)
+	pdfHandler := newPDFHandler(deps.PDFService)
 
 	return &handlers{
 		TagHandler:         tagHandler,
 		TechHandler:        techHandler,
 		EducationHandler:   educationHandler,
 		WorkHistoryHandler: workHistoryHandler,
+		PDFHandler:         pdfHandler,
 	}
 }
 
