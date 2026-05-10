@@ -16,6 +16,17 @@ type Education struct {
 	Organization string      `json:"organization"`
 }
 
+type Profile struct {
+	ID       int64       `json:"id"`
+	FullName string      `json:"fullName"`
+	Title    string      `json:"title"`
+	About    pgtype.Text `json:"about"`
+	Email    string      `json:"email"`
+	Telegram string      `json:"telegram"`
+	Github   string      `json:"github"`
+	Phone    string      `json:"phone"`
+}
+
 type Tag struct {
 	ID       int64  `json:"id"`
 	Name     string `json:"name"`
