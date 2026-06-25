@@ -1,0 +1,17 @@
+# Stage 1: Build
+FROM golang:1.25-alpine AS builder
+WORKDIR /app
+RUN apk add --no-cache git gcc musl-dev
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o cv-backend ./cmd/main.go
+
+# Stage 2: Run
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates tzdata
+WORKDIR /app
+COPY --from=builder /app/cv-backend .
+COPY --from=builder /app/migrations ./migrations
+EXPOSE 3333
+ENTRYPOINT ["./cv-backend"]
