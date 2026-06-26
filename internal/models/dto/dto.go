@@ -85,3 +85,11 @@ type DeleteResponse struct {
 	DeletedIDs []int64 `json:"deleted_ids"`
 	Count      int     `json:"count"`
 }
+
+// AboutMeDTO — данные секции «О себе» для JSON-ответа
+type AboutMeDTO struct {
+	BioParagraphs []string                `json:"bioParagraphs"`
+	Technologies  []TechnologyWithTagsDTO `json:"technologies"`
+	Note          *string                 `json:"note"`
+	Hobbies       *string                 `json:"hobbies"`
+}

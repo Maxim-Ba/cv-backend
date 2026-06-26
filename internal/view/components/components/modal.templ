@@ -137,6 +137,62 @@ templ ModalForm(data EntityFormData) {
 	</div>
 }
 
+templ InlineEntityForm(data EntityFormData) {
+	<form method="POST" action={ data.ActionURL } class="card card-body">
+		<input type="hidden" name="_method" value={ data.Method }/>
+		<input type="hidden" name="csrf_token" value={ data.CSRFToken }/>
+		if data.EntityID > 0 {
+			<input type="hidden" name="id" value={ strconv.FormatInt(data.EntityID, 10) }/>
+		}
+		for _, field := range data.Fields {
+			<div class="mb-3">
+				<label for={ "field-" + field.Name } class="form-label">{ field.Label }</label>
+				if field.IsTextArea {
+					<textarea
+						class="form-control"
+						id={ "field-" + field.Name }
+						name={ field.Name }
+						rows="5"
+						placeholder={ field.Placeholder }
+						required?={ field.Required }
+					>{ field.Value }</textarea>
+				} else if field.Type == "checkbox-group" {
+					<div class="d-flex flex-wrap gap-2">
+						for _, opt := range field.Options {
+							<div class="form-check">
+								<input
+									class="form-check-input"
+									type="checkbox"
+									name={ field.Name }
+									value={ opt.Value }
+									id={ "field-" + field.Name + "-" + opt.Value }
+									checked?={ opt.Checked }
+								/>
+								<label class="form-check-label" for={ "field-" + field.Name + "-" + opt.Value }>
+									<span class="badge" style={ "background-color: " + opt.Color }>{ opt.Label }</span>
+								</label>
+							</div>
+						}
+					</div>
+				} else {
+					<input
+						type={ field.Type }
+						class="form-control"
+						id={ "field-" + field.Name }
+						name={ field.Name }
+						value={ field.Value }
+						placeholder={ field.Placeholder }
+						required?={ field.Required }
+					/>
+				}
+			</div>
+		}
+		<div class="d-flex justify-content-end">
+			<button type="submit" class="btn btn-primary">Сохранить</button>
+		</div>
+	</form>
+}
+
 func TechnologyFormData(tech models.Technology, allTags []models.Tag, selectedTagIDs map[int64]bool, csrfToken string, isEdit bool) EntityFormData {
 	method := "POST"
 	if isEdit {
@@ -356,6 +412,61 @@ func WorkHistoryFormData(wh models.WorkHistory, allTechnologies []models.Technol
 				Label:   "Технологии",
 				Type:    "checkbox-group",
 				Options: technologyOptions,
+			},
+		},
+	}
+}
+
+func AboutMeFormData(about, note, hobbies string, allTech []models.Technology, selectedTechnologyIDs map[int64]bool, csrfToken string) EntityFormData {
+	technologyOptions := make([]FormFieldOption, 0, len(allTech))
+	for _, tech := range allTech {
+		technologyOptions = append(technologyOptions, FormFieldOption{
+			Value:   strconv.FormatInt(tech.ID, 10),
+			Label:   tech.Title,
+			Checked: selectedTechnologyIDs[tech.ID],
+			Color:   "#6c757d",
+		})
+	}
+
+	return EntityFormData{
+		EntityName: "AboutMe",
+		ActionURL:  "/admin/about-me",
+		Method:     "PUT",
+		EntityID:   1,
+		CSRFToken:  csrfToken,
+		Fields: []FormField{
+			{
+				Name:        "about",
+				Label:       "Биография (абзацы через пустую строку)",
+				Type:        "text",
+				Value:       about,
+				Placeholder: "Первый абзац\n\nВторой абзац",
+				IsTextArea:  true,
+				Required:    false,
+			},
+			{
+				Name:    "technologyIds",
+				Label:   "Технологии (бейджи)",
+				Type:    "checkbox-group",
+				Options: technologyOptions,
+			},
+			{
+				Name:        "note",
+				Label:       "Заметка",
+				Type:        "text",
+				Value:       note,
+				Placeholder: "Краткая заметка",
+				IsTextArea:  true,
+				Required:    false,
+			},
+			{
+				Name:        "hobbies",
+				Label:       "Хобби",
+				Type:        "text",
+				Value:       hobbies,
+				Placeholder: "Мои хобби: ...",
+				IsTextArea:  true,
+				Required:    false,
 			},
 		},
 	}

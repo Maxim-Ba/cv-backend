@@ -1,5 +1,27 @@
 basePath: /api
 definitions:
+  apierrors.APIError:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+  dto.AboutMeDTO:
+    properties:
+      bioParagraphs:
+        items:
+          type: string
+        type: array
+      hobbies:
+        type: string
+      note:
+        type: string
+      technologies:
+        items:
+          $ref: '#/definitions/dto.TechnologyWithTagsDTO'
+        type: array
+    type: object
   dto.DeleteResponse:
     properties:
       count:
@@ -166,6 +188,86 @@ info:
   title: CV Backend API
   version: "1.0"
 paths:
+  /about-me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AboutMeDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apierrors.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apierrors.APIError'
+      summary: Получить секцию «О себе»
+      tags:
+      - about-me
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные секции
+        in: body
+        name: body
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              bioParagraphs:
+                items:
+                  type: string
+                type: array
+              hobbies:
+                type: string
+              note:
+                type: string
+              technologyIds:
+                items:
+                  type: integer
+                type: array
+            type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AboutMeDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apierrors.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apierrors.APIError'
+      summary: Обновить секцию «О себе»
+      tags:
+      - about-me
+  /download-cv:
+    get:
+      description: Генерирует актуальное резюме из данных БД и возвращает PDF-файл
+      produces:
+      - application/pdf
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apierrors.APIError'
+      summary: Скачать CV в PDF
+      tags:
+      - cv
   /edu:
     delete:
       consumes:
@@ -194,15 +296,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apierrors.APIError'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Удалить запись(и) образования
       tags:
       - education
@@ -226,9 +328,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Список записей образования
       tags:
       - education
@@ -263,15 +363,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Создать запись образования
       tags:
       - education
@@ -308,15 +404,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apierrors.APIError'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Обновить запись образования
       tags:
       - education
@@ -338,15 +434,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apierrors.APIError'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Получить запись образования по ID
       tags:
       - education
@@ -378,15 +474,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apierrors.APIError'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Удалить тег(и)
       tags:
       - tags
@@ -410,9 +506,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Список тегов
       tags:
       - tags
@@ -443,15 +537,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Создать тег
       tags:
       - tags
@@ -484,15 +574,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apierrors.APIError'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Обновить тег
       tags:
       - tags
@@ -514,15 +604,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apierrors.APIError'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Получить тег по ID
       tags:
       - tags
@@ -554,15 +644,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apierrors.APIError'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Удалить технологию(и)
       tags:
       - technologies
@@ -586,9 +676,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Список технологий
       tags:
       - technologies
@@ -621,15 +709,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Создать технологию
       tags:
       - technologies
@@ -664,15 +748,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apierrors.APIError'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Обновить технологию
       tags:
       - technologies
@@ -694,15 +778,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apierrors.APIError'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Получить технологию по ID
       tags:
       - technologies
@@ -734,15 +818,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apierrors.APIError'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Удалить запись(и) истории работы
       tags:
       - work-history
@@ -766,9 +850,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Список истории работы
       tags:
       - work-history
@@ -813,15 +895,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Создать запись истории работы
       tags:
       - work-history
@@ -868,15 +946,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apierrors.APIError'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Обновить запись истории работы
       tags:
       - work-history
@@ -898,15 +976,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apierrors.APIError'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.APIError'
       summary: Получить запись истории работы по ID
       tags:
       - work-history

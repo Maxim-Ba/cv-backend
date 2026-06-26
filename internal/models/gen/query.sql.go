@@ -133,7 +133,7 @@ type CreateWorkHistoryParams struct {
 	ID          int64       `json:"id"`
 	Name        string      `json:"name"`
 	About       string      `json:"about"`
-	LogoUrl     []byte      `json:"logoUrl"`
+	LogoUrl     pgtype.Text `json:"logoUrl"`
 	PeriodStart pgtype.Date `json:"periodStart"`
 	PeriodEnd   pgtype.Date `json:"periodEnd"`
 	WhatIDid    []string    `json:"whatIDid"`

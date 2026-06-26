@@ -38,7 +38,7 @@ func Base(title string, content templ.Component, user string) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `layout/base.templ`, Line: 11, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/components/layout/base.templ`, Line: 11, Col: 33}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -57,7 +57,7 @@ func Base(title string, content templ.Component, user string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if user != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"row\"><div class=\"col-md-3\"><div class=\"list-group\"><a href=\"/admin/tag\" class=\"list-group-item list-group-item-action\">Tags</a> <a href=\"/admin/tech\" class=\"list-group-item list-group-item-action\">Technologies</a> <a href=\"/admin/history\" class=\"list-group-item list-group-item-action\">Work history</a> <a href=\"/admin/education\" class=\"list-group-item list-group-item-action\">Education</a></div></div><div class=\"col-md-9\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"row\"><div class=\"col-md-3\"><div class=\"list-group\"><a href=\"/admin/tag\" class=\"list-group-item list-group-item-action\">Tags</a> <a href=\"/admin/tech\" class=\"list-group-item list-group-item-action\">Technologies</a> <a href=\"/admin/history\" class=\"list-group-item list-group-item-action\">Work history</a> <a href=\"/admin/education\" class=\"list-group-item list-group-item-action\">Education</a> <a href=\"/admin/about-me\" class=\"list-group-item list-group-item-action\">О себе</a></div></div><div class=\"col-md-9\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

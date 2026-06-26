@@ -41,6 +41,7 @@ type Dependencies struct {
 	TechService        *services.TechService
 	EducationService   *services.EducationService
 	WorkHistoryService *services.WorkHistoryService
+	ProfileService     *services.ProfileService
 	PDFService         *services.PDFService
 }
 
@@ -104,6 +105,8 @@ func New(deps *Dependencies, db *sql.DB, allowedOrigin, adminUser, adminPass, ap
 			r.Post("/history", router.adminHistoryPost)
 			r.Get("/education", router.adminEducation)
 			r.Post("/education", router.adminEducationPost)
+			r.Get("/about-me", router.adminAboutMe)
+			r.Post("/about-me", router.adminAboutMePost)
 		})
 	})
 
@@ -145,6 +148,10 @@ func New(deps *Dependencies, db *sql.DB, allowedOrigin, adminUser, adminPass, ap
 			r.Delete("/", h.EducationHandler.EducationDelete)
 			r.Put("/", h.EducationHandler.EducationUpdate)
 		})
+		r.Route("/about-me", func(r chi.Router) {
+			r.Get("/", h.AboutMeHandler.AboutMeGet)
+			r.Put("/", h.AboutMeHandler.AboutMeUpdate)
+		})
 		//
 		r.Route("/fb", func(r chi.Router) {
 			r.Get("/{fbID}", FeedBackGet)
@@ -161,6 +168,7 @@ type handlers struct {
 	TechHandler        *TechHandler
 	EducationHandler   *EducationHandler
 	WorkHistoryHandler *WorkHistoryHandler
+	AboutMeHandler     *AboutMeHandler
 	PDFHandler         *PDFHandler
 }
 
@@ -169,6 +177,7 @@ func createHandlers(deps *Dependencies) *handlers {
 	techHandler := NewTechHandler(deps.TechService)
 	educationHandler := NewEducationHandler(deps.EducationService)
 	workHistoryHandler := NewWorkHistoryHandler(deps.WorkHistoryService)
+	aboutMeHandler := NewAboutMeHandler(deps.ProfileService)
 	pdfHandler := newPDFHandler(deps.PDFService)
 
 	return &handlers{
@@ -176,6 +185,7 @@ func createHandlers(deps *Dependencies) *handlers {
 		TechHandler:        techHandler,
 		EducationHandler:   educationHandler,
 		WorkHistoryHandler: workHistoryHandler,
+		AboutMeHandler:     aboutMeHandler,
 		PDFHandler:         pdfHandler,
 	}
 }
@@ -597,4 +607,43 @@ func (rt *Router) adminHistoryPost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	http.Redirect(w, r, "/admin/history", http.StatusSeeOther)
+}
+
+// --- About Me ---
+
+func (rt *Router) adminAboutMe(w http.ResponseWriter, r *http.Request) {
+	user := "Администратор"
+	aboutMe, err := rt.Deps.ProfileService.GetAboutMe()
+	if err != nil {
+		slog.Error(err.Error())
+	}
+	allTechResult, err := rt.Deps.TechService.List(entityreqdecorator.PagebleRq{Page: 1, Size: 0})
+	if err != nil {
+		slog.Error(err.Error())
+	}
+	selectedTechnologyIDs := map[int64]bool{}
+	for _, tech := range aboutMe.Technologies {
+		selectedTechnologyIDs[tech.ID] = true
+	}
+	csrfToken := csrf.Token(r)
+	component := pages.AboutMePage(user, aboutMe, allTechResult.Content, selectedTechnologyIDs, csrfToken)
+	component.Render(r.Context(), w)
+}
+
+func (rt *Router) adminAboutMePost(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	input := services.UpdateAboutMeInput{
+		About:         r.FormValue("about"),
+		Note:          r.FormValue("note"),
+		Hobbies:       r.FormValue("hobbies"),
+		TechnologyIDs: parseTechnologyIDs(r),
+	}
+	if err := rt.Deps.ProfileService.UpdateAboutMe(input); err != nil {
+		slog.Error(err.Error())
+	}
+	http.Redirect(w, r, "/admin/about-me", http.StatusSeeOther)
 }

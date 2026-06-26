@@ -25,6 +25,13 @@ type Profile struct {
 	Telegram string      `json:"telegram"`
 	Github   string      `json:"github"`
 	Phone    string      `json:"phone"`
+	Note     pgtype.Text `json:"note"`
+	Hobbies  pgtype.Text `json:"hobbies"`
+}
+
+type ProfileTechnology struct {
+	ProfileID    int64 `json:"profileId"`
+	TechnologyID int64 `json:"technologyId"`
 }
 
 type Tag struct {
