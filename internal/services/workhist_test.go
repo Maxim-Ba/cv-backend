@@ -72,6 +72,10 @@ func (m *MockWorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.Pagebl
 	return entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO]{}, nil
 }
 
+func (m *MockWorkHistoryRepo) SetTechnologies(workHistoryID int64, technologyIDs []int64) error {
+	return nil
+}
+
 // TestWorkHistoryService_Get тестирует метод Get
 func TestWorkHistoryService_Get(t *testing.T) {
 	testDate := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)

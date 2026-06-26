@@ -1022,3 +1022,50 @@ func TestWorkHistoryRepo_ListWithTechnologies_TechnologyWithoutTags(t *testing.T
 	assert.Equal(t, "No tags", *techResult.Description)
 	assert.Empty(t, techResult.Tags)
 }
+
+func TestWorkHistoryRepo_SetTechnologies(t *testing.T) {
+	cleanupTable(t, "work_history_technology")
+	cleanupTable(t, "work_history")
+	cleanupTable(t, "technology")
+
+	whRepo := NewWorkHistoryRepo(testDB)
+	techRepo := NewTechnologyRepo(testDB)
+
+	wh, err := whRepo.Create(models.WorkHistory{
+		Name:        "Company",
+		About:       "About company",
+		PeriodStart: newPgDate(2020, time.January, 1),
+		WhatIDid:    []string{},
+		Projects:    []string{},
+	})
+	require.NoError(t, err)
+
+	tech1, err := techRepo.Create(models.Technology{Title: "Go"})
+	require.NoError(t, err)
+	tech2, err := techRepo.Create(models.Technology{Title: "PostgreSQL"})
+	require.NoError(t, err)
+
+	err = whRepo.SetTechnologies(wh.ID, []int64{tech1.ID, tech2.ID})
+	require.NoError(t, err)
+
+	withTech, err := whRepo.GetWithTechnologies(wh.ID)
+	require.NoError(t, err)
+	require.Len(t, withTech.Technologies, 2)
+	assert.Equal(t, tech1.ID, withTech.Technologies[0].ID)
+	assert.Equal(t, tech2.ID, withTech.Technologies[1].ID)
+
+	err = whRepo.SetTechnologies(wh.ID, []int64{tech1.ID})
+	require.NoError(t, err)
+
+	withTech, err = whRepo.GetWithTechnologies(wh.ID)
+	require.NoError(t, err)
+	require.Len(t, withTech.Technologies, 1)
+	assert.Equal(t, tech1.ID, withTech.Technologies[0].ID)
+
+	err = whRepo.SetTechnologies(wh.ID, nil)
+	require.NoError(t, err)
+
+	withTech, err = whRepo.GetWithTechnologies(wh.ID)
+	require.NoError(t, err)
+	assert.Empty(t, withTech.Technologies)
+}

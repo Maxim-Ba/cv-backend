@@ -421,3 +421,44 @@ func TestTechnologyRepo_List_Sorting(t *testing.T) {
 	assert.Equal(t, "Middle", result.Content[1].Title)
 	assert.Equal(t, "Alpha", result.Content[2].Title)
 }
+
+func TestTechnologyRepo_SetTags(t *testing.T) {
+	cleanupTable(t, "technologies_tag")
+	cleanupTable(t, "technology")
+	cleanupTable(t, "tag")
+
+	techRepo := NewTechnologyRepo(testDB)
+	tagRepo := NewTagRepo(testDB)
+
+	tech, err := techRepo.Create(models.Technology{Title: "Go"})
+	require.NoError(t, err)
+
+	tag1, err := tagRepo.Create(models.Tag{Name: "Backend", HexColor: "#111111"})
+	require.NoError(t, err)
+	tag2, err := tagRepo.Create(models.Tag{Name: "Language", HexColor: "#222222"})
+	require.NoError(t, err)
+
+	err = techRepo.SetTags(tech.ID, []int64{tag1.ID, tag2.ID})
+	require.NoError(t, err)
+
+	withTags, err := techRepo.GetWithTags(tech.ID)
+	require.NoError(t, err)
+	require.Len(t, withTags.Tags, 2)
+	assert.Equal(t, tag1.ID, withTags.Tags[0].ID)
+	assert.Equal(t, tag2.ID, withTags.Tags[1].ID)
+
+	err = techRepo.SetTags(tech.ID, []int64{tag1.ID})
+	require.NoError(t, err)
+
+	withTags, err = techRepo.GetWithTags(tech.ID)
+	require.NoError(t, err)
+	require.Len(t, withTags.Tags, 1)
+	assert.Equal(t, tag1.ID, withTags.Tags[0].ID)
+
+	err = techRepo.SetTags(tech.ID, nil)
+	require.NoError(t, err)
+
+	withTags, err = techRepo.GetWithTags(tech.ID)
+	require.NoError(t, err)
+	assert.Empty(t, withTags.Tags)
+}

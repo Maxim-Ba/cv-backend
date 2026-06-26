@@ -316,13 +316,18 @@ func (rt *Router) adminTech(w http.ResponseWriter, r *http.Request) {
 	user := "Администратор"
 	queryParams := r.URL.Query()
 	pagebleRq := entityreqdecorator.ParseQueryParams(queryParams)
-	techResult, err := rt.Deps.TechService.List(pagebleRq)
+	techResult, err := rt.Deps.TechService.ListWithTags(pagebleRq)
+	if err != nil {
+		slog.Error(err.Error())
+	}
+	allTagsResult, err := rt.Deps.TagService.List(entityreqdecorator.PagebleRq{Page: 1, Size: 0})
 	if err != nil {
 		slog.Error(err.Error())
 	}
 	csrfToken := csrf.Token(r)
 
 	var editTech models.Technology
+	selectedTagIDs := map[int64]bool{}
 	editID := r.URL.Query().Get("edit")
 	if r.URL.Query().Get("create") == "1" {
 		editID = "create"
@@ -330,10 +335,38 @@ func (rt *Router) adminTech(w http.ResponseWriter, r *http.Request) {
 		id, convErr := strconv.ParseInt(editID, 10, 64)
 		if convErr == nil {
 			editTech, _ = rt.Deps.TechService.Get(id)
+			techWithTags, getErr := rt.Deps.TechService.GetWithTags(id)
+			if getErr == nil {
+				for _, tag := range techWithTags.Tags {
+					selectedTagIDs[tag.ID] = true
+				}
+			}
 		}
 	}
-	component := pages.TechPage(user, techResult, editTech, editID, csrfToken)
+	component := pages.TechPage(user, techResult, allTagsResult.Content, selectedTagIDs, editTech, editID, csrfToken)
 	component.Render(r.Context(), w)
+}
+
+func parseTagIDs(r *http.Request) []int64 {
+	var tagIDs []int64
+	for _, rawID := range r.Form["tagIds"] {
+		id, err := strconv.ParseInt(rawID, 10, 64)
+		if err == nil {
+			tagIDs = append(tagIDs, id)
+		}
+	}
+	return tagIDs
+}
+
+func parseTechnologyIDs(r *http.Request) []int64 {
+	var technologyIDs []int64
+	for _, rawID := range r.Form["technologyIds"] {
+		id, err := strconv.ParseInt(rawID, 10, 64)
+		if err == nil {
+			technologyIDs = append(technologyIDs, id)
+		}
+	}
+	return technologyIDs
 }
 
 func (rt *Router) adminTechPost(w http.ResponseWriter, r *http.Request) {
@@ -341,6 +374,7 @@ func (rt *Router) adminTechPost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
+	tagIDs := parseTagIDs(r)
 	switch r.FormValue("_method") {
 	case "DELETE":
 		idStr := r.FormValue("id")
@@ -361,6 +395,8 @@ func (rt *Router) adminTechPost(w http.ResponseWriter, r *http.Request) {
 		}
 		if _, err := rt.Deps.TechService.Update(tech); err != nil {
 			slog.Error(err.Error())
+		} else if err := rt.Deps.TechService.SetTags(id, tagIDs); err != nil {
+			slog.Error(err.Error())
 		}
 	default:
 		tech := models.Technology{
@@ -368,7 +404,10 @@ func (rt *Router) adminTechPost(w http.ResponseWriter, r *http.Request) {
 			Description: pgtype.Text{String: r.FormValue("description"), Valid: true},
 			LogoUrl:     pgtype.Text{String: r.FormValue("logoUrl"), Valid: true},
 		}
-		if _, err := rt.Deps.TechService.Create(tech); err != nil {
+		created, err := rt.Deps.TechService.Create(tech)
+		if err != nil {
+			slog.Error(err.Error())
+		} else if err := rt.Deps.TechService.SetTags(created.ID, tagIDs); err != nil {
 			slog.Error(err.Error())
 		}
 	}
@@ -452,13 +491,18 @@ func (rt *Router) admiHistory(w http.ResponseWriter, r *http.Request) {
 	user := "Администратор"
 	queryParams := r.URL.Query()
 	pagebleRq := entityreqdecorator.ParseQueryParams(queryParams)
-	whResult, err := rt.Deps.WorkHistoryService.List(pagebleRq)
+	whResult, err := rt.Deps.WorkHistoryService.ListWithTechnologies(pagebleRq)
+	if err != nil {
+		slog.Error(err.Error())
+	}
+	allTechResult, err := rt.Deps.TechService.List(entityreqdecorator.PagebleRq{Page: 1, Size: 0})
 	if err != nil {
 		slog.Error(err.Error())
 	}
 	csrfToken := csrf.Token(r)
 
 	var editWH models.WorkHistory
+	selectedTechnologyIDs := map[int64]bool{}
 	editID := r.URL.Query().Get("edit")
 	if r.URL.Query().Get("create") == "1" {
 		editID = "create"
@@ -466,9 +510,15 @@ func (rt *Router) admiHistory(w http.ResponseWriter, r *http.Request) {
 		id, convErr := strconv.ParseInt(editID, 10, 64)
 		if convErr == nil {
 			editWH, _ = rt.Deps.WorkHistoryService.Get(id)
+			whWithTech, getErr := rt.Deps.WorkHistoryService.GetWithTechnologies(id)
+			if getErr == nil {
+				for _, tech := range whWithTech.Technologies {
+					selectedTechnologyIDs[tech.ID] = true
+				}
+			}
 		}
 	}
-	component := pages.HistoryPage(user, whResult, editWH, editID, csrfToken)
+	component := pages.HistoryPage(user, whResult, allTechResult.Content, selectedTechnologyIDs, editWH, editID, csrfToken)
 	component.Render(r.Context(), w)
 }
 
@@ -499,6 +549,7 @@ func (rt *Router) adminHistoryPost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
+	technologyIDs := parseTechnologyIDs(r)
 	switch r.FormValue("_method") {
 	case "DELETE":
 		idStr := r.FormValue("id")
@@ -524,6 +575,8 @@ func (rt *Router) adminHistoryPost(w http.ResponseWriter, r *http.Request) {
 		}
 		if _, err := rt.Deps.WorkHistoryService.Update(wh); err != nil {
 			slog.Error(err.Error())
+		} else if err := rt.Deps.WorkHistoryService.SetTechnologies(id, technologyIDs); err != nil {
+			slog.Error(err.Error())
 		}
 	default:
 		logoUrlPost := r.FormValue("logoUrl")
@@ -536,7 +589,10 @@ func (rt *Router) adminHistoryPost(w http.ResponseWriter, r *http.Request) {
 			WhatIDid:    parseLines(r.FormValue("whatIDid")),
 			Projects:    parseLines(r.FormValue("projects")),
 		}
-		if _, err := rt.Deps.WorkHistoryService.Create(wh); err != nil {
+		created, err := rt.Deps.WorkHistoryService.Create(wh)
+		if err != nil {
+			slog.Error(err.Error())
+		} else if err := rt.Deps.WorkHistoryService.SetTechnologies(created.ID, technologyIDs); err != nil {
 			slog.Error(err.Error())
 		}
 	}

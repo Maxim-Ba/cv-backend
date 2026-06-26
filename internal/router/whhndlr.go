@@ -100,13 +100,14 @@ func (wh *WorkHistoryHandler) WorkHistoryList(w http.ResponseWriter, r *http.Req
 // @Router       /wh [post]
 func (wh *WorkHistoryHandler) WorkHistoryCreate(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
-		Name        string   `json:"name"`
-		About       string   `json:"about"`
-		LogoUrl     string   `json:"logoUrl"`
-		PeriodStart string   `json:"periodStart"`
-		PeriodEnd   string   `json:"periodEnd"`
-		WhatIDid    []string `json:"whatIDid"`
-		Projects    []string `json:"projects"`
+		Name          string   `json:"name"`
+		About         string   `json:"about"`
+		LogoUrl       string   `json:"logoUrl"`
+		PeriodStart   string   `json:"periodStart"`
+		PeriodEnd     string   `json:"periodEnd"`
+		WhatIDid      []string `json:"whatIDid"`
+		Projects      []string `json:"projects"`
+		TechnologyIds []int64  `json:"technologyIds"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
@@ -141,6 +142,10 @@ func (wh *WorkHistoryHandler) WorkHistoryCreate(w http.ResponseWriter, r *http.R
 
 	created, err := wh.service.Create(workHistory)
 	if err != nil {
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if err := wh.service.SetTechnologies(created.ID, reqData.TechnologyIds); err != nil {
 		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -218,14 +223,15 @@ func (wh *WorkHistoryHandler) WorkHistoryDelete(w http.ResponseWriter, r *http.R
 // @Router       /wh [put]
 func (wh *WorkHistoryHandler) WorkHistoryUpdate(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
-		ID          int64    `json:"id"`
-		Name        string   `json:"name"`
-		About       string   `json:"about"`
-		LogoUrl     string   `json:"logoUrl"`
-		PeriodStart string   `json:"periodStart"`
-		PeriodEnd   string   `json:"periodEnd"`
-		WhatIDid    []string `json:"whatIDid"`
-		Projects    []string `json:"projects"`
+		ID            int64    `json:"id"`
+		Name          string   `json:"name"`
+		About         string   `json:"about"`
+		LogoUrl       string   `json:"logoUrl"`
+		PeriodStart   string   `json:"periodStart"`
+		PeriodEnd     string   `json:"periodEnd"`
+		WhatIDid      []string `json:"whatIDid"`
+		Projects      []string `json:"projects"`
+		TechnologyIds []int64  `json:"technologyIds"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
@@ -265,6 +271,10 @@ func (wh *WorkHistoryHandler) WorkHistoryUpdate(w http.ResponseWriter, r *http.R
 			apierrors.WriteError(w, http.StatusNotFound, "work history not found")
 			return
 		}
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if err := wh.service.SetTechnologies(updated.ID, reqData.TechnologyIds); err != nil {
 		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

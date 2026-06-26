@@ -25,11 +25,15 @@ type TechDTOReader interface {
 	GetWithTags(id int64) (dto.TechnologyWithTagsDTO, error)
 	ListWithTags(entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO], error)
 }
+type TechTagWriter interface {
+	SetTags(technologyID int64, tagIDs []int64) error
+}
 type TechManager interface {
 	TechReader
 	TechWriter
 	TechDeleter
 	TechDTOReader
+	TechTagWriter
 }
 type TechService struct {
 	repo TechManager
@@ -131,4 +135,15 @@ func (s *TechService) Update(technology models.Technology) (models.Technology, e
 		return models.Technology{}, fmt.Errorf("error updating technology: %w", err)
 	}
 	return res, nil
+}
+
+// SetTags заменяет набор тегов у технологии
+func (s *TechService) SetTags(technologyID int64, tagIDs []int64) error {
+	if technologyID == 0 {
+		return fmt.Errorf("invalid technology ID: %d", technologyID)
+	}
+	if err := s.repo.SetTags(technologyID, tagIDs); err != nil {
+		return fmt.Errorf("error setting technology tags: %w", err)
+	}
+	return nil
 }

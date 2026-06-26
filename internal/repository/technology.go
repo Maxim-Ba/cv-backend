@@ -354,3 +354,32 @@ func (t *TechnologyRepo) ListWithTags(req entityreqdecorator.PagebleRq) (entityr
 		Sort:    req.Sort,
 	}, nil
 }
+
+// SetTags заменяет набор тегов у технологии
+func (t *TechnologyRepo) SetTags(technologyID int64, tagIDs []int64) error {
+	tx, err := t.db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	if _, err = tx.Exec("DELETE FROM technologies_tag WHERE technology_id = $1", technologyID); err != nil {
+		return fmt.Errorf("failed to remove existing tags: %w", err)
+	}
+
+	for _, tagID := range tagIDs {
+		if _, err = tx.Exec(
+			"INSERT INTO technologies_tag (tag_id, technology_id) VALUES ($1, $2)",
+			tagID,
+			technologyID,
+		); err != nil {
+			return fmt.Errorf("failed to add tag %d to technology %d: %w", tagID, technologyID, err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit tags transaction: %w", err)
+	}
+
+	return nil
+}

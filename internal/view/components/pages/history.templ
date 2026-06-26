@@ -3,17 +3,18 @@ package pages
 import (
 	"strconv"
 
+	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	"github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	"github.com/Maxim-Ba/cv-backend/internal/view/components/components"
 	"github.com/Maxim-Ba/cv-backend/internal/view/components/layout"
 	"github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
-templ HistoryPage(user string, whResult entityreqdecorator.PagebleRs[models.WorkHistory], editWH models.WorkHistory, editID string, csrfToken string) {
-	@layout.Base("History", historyPage(whResult, editWH, editID, csrfToken), user)
+templ HistoryPage(user string, whResult entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO], allTechnologies []models.Technology, selectedTechnologyIDs map[int64]bool, editWH models.WorkHistory, editID string, csrfToken string) {
+	@layout.Base("History", historyPage(whResult, allTechnologies, selectedTechnologyIDs, editWH, editID, csrfToken), user)
 }
 
-templ historyPage(whResult entityreqdecorator.PagebleRs[models.WorkHistory], editWH models.WorkHistory, editID string, csrfToken string) {
+templ historyPage(whResult entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO], allTechnologies []models.Technology, selectedTechnologyIDs map[int64]bool, editWH models.WorkHistory, editID string, csrfToken string) {
 	<div class="mb-3">
 		<a href="?create=1" class="btn btn-success">+ Добавить место работы</a>
 	</div>
@@ -26,6 +27,7 @@ templ historyPage(whResult entityreqdecorator.PagebleRs[models.WorkHistory], edi
 					<th>О компании</th>
 					<th>Начало</th>
 					<th>Конец</th>
+					<th>Технологии</th>
 					<th>Действия</th>
 				</tr>
 			</thead>
@@ -35,12 +37,21 @@ templ historyPage(whResult entityreqdecorator.PagebleRs[models.WorkHistory], edi
 						<td>{ strconv.FormatInt(wh.ID, 10) }</td>
 						<td>{ wh.Name }</td>
 						<td>{ wh.About }</td>
-						<td>{ wh.PeriodStart.Time.Format("2006-01-02") }</td>
 						<td>
-							if wh.PeriodEnd.Valid {
-								{ wh.PeriodEnd.Time.Format("2006-01-02") }
+							if wh.PeriodStart != nil {
+								{ *wh.PeriodStart }
+							}
+						</td>
+						<td>
+							if wh.PeriodEnd != nil {
+								{ *wh.PeriodEnd }
 							} else {
 								по наст. время
+							}
+						</td>
+						<td>
+							for _, tech := range wh.Technologies {
+								<span class="badge bg-secondary me-1">{ tech.Title }</span>
 							}
 						</td>
 						<td>
@@ -58,8 +69,8 @@ templ historyPage(whResult entityreqdecorator.PagebleRs[models.WorkHistory], edi
 		</table>
 	}
 	if editID == "create" {
-		@components.ModalForm(components.WorkHistoryFormData(models.WorkHistory{}, csrfToken, false))
+		@components.ModalForm(components.WorkHistoryFormData(models.WorkHistory{}, allTechnologies, selectedTechnologyIDs, csrfToken, false))
 	} else if editID != "" {
-		@components.ModalForm(components.WorkHistoryFormData(editWH, csrfToken, true))
+		@components.ModalForm(components.WorkHistoryFormData(editWH, allTechnologies, selectedTechnologyIDs, csrfToken, true))
 	}
 }

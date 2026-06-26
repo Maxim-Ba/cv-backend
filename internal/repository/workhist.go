@@ -530,3 +530,32 @@ func (w *WorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.PagebleRq)
 		Sort:    req.Sort,
 	}, nil
 }
+
+// SetTechnologies заменяет набор технологий у записи истории работы
+func (w *WorkHistoryRepo) SetTechnologies(workHistoryID int64, technologyIDs []int64) error {
+	tx, err := w.db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	if _, err = tx.Exec("DELETE FROM work_history_technology WHERE work_history_id = $1", workHistoryID); err != nil {
+		return fmt.Errorf("failed to remove existing technologies: %w", err)
+	}
+
+	for _, technologyID := range technologyIDs {
+		if _, err = tx.Exec(
+			"INSERT INTO work_history_technology (work_history_id, technology_id) VALUES ($1, $2)",
+			workHistoryID,
+			technologyID,
+		); err != nil {
+			return fmt.Errorf("failed to add technology %d to work history %d: %w", technologyID, workHistoryID, err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit technologies transaction: %w", err)
+	}
+
+	return nil
+}

@@ -71,6 +71,10 @@ func (m *MockTechRepo) ListWithTags(req entityreqdecorator.PagebleRq) (entityreq
 	return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{}, nil
 }
 
+func (m *MockTechRepo) SetTags(technologyID int64, tagIDs []int64) error {
+	return nil
+}
+
 // TestTechService_Get тестирует метод Get
 func TestTechService_Get(t *testing.T) {
 	tests := []struct {

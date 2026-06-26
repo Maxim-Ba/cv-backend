@@ -99,9 +99,10 @@ func (th *TechHandler) TechList(w http.ResponseWriter, r *http.Request) {
 // @Router       /tech [post]
 func (th *TechHandler) TechCreate(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		LogoUrl     string `json:"logoUrl"`
+		Title       string  `json:"title"`
+		Description string  `json:"description"`
+		LogoUrl     string  `json:"logoUrl"`
+		TagIds      []int64 `json:"tagIds"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
@@ -117,6 +118,10 @@ func (th *TechHandler) TechCreate(w http.ResponseWriter, r *http.Request) {
 
 	created, err := th.service.Create(technology)
 	if err != nil {
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if err := th.service.SetTags(created.ID, reqData.TagIds); err != nil {
 		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -194,10 +199,11 @@ func (th *TechHandler) TechDelete(w http.ResponseWriter, r *http.Request) {
 // @Router       /tech [put]
 func (th *TechHandler) TechUpdate(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
-		ID          int64  `json:"id"`
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		LogoUrl     string `json:"logoUrl"`
+		ID          int64   `json:"id"`
+		Title       string  `json:"title"`
+		Description string  `json:"description"`
+		LogoUrl     string  `json:"logoUrl"`
+		TagIds      []int64 `json:"tagIds"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
@@ -218,6 +224,10 @@ func (th *TechHandler) TechUpdate(w http.ResponseWriter, r *http.Request) {
 			apierrors.WriteError(w, http.StatusNotFound, "technology not found")
 			return
 		}
+		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if err := th.service.SetTags(updated.ID, reqData.TagIds); err != nil {
 		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

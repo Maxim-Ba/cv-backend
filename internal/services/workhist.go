@@ -32,12 +32,18 @@ type WorkHistoryDTOReader interface {
 	ListWithTechnologies(entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO], error)
 }
 
+// WorkHistoryTechnologyWriter интерфейс для управления связями с технологиями
+type WorkHistoryTechnologyWriter interface {
+	SetTechnologies(workHistoryID int64, technologyIDs []int64) error
+}
+
 // WorkHistoryManager объединяет все интерфейсы для работы с историей работы
 type WorkHistoryManager interface {
 	WorkHistoryReader
 	WorkHistoryWriter
 	WorkHistoryDeleter
 	WorkHistoryDTOReader
+	WorkHistoryTechnologyWriter
 }
 
 // WorkHistoryService сервис для работы с историей работы
@@ -143,4 +149,15 @@ func (s *WorkHistoryService) Update(workHistory models.WorkHistory) (models.Work
 		return models.WorkHistory{}, fmt.Errorf("error updating work history: %w", err)
 	}
 	return res, nil
+}
+
+// SetTechnologies заменяет набор технологий у записи истории работы
+func (s *WorkHistoryService) SetTechnologies(workHistoryID int64, technologyIDs []int64) error {
+	if workHistoryID == 0 {
+		return fmt.Errorf("invalid work history ID: %d", workHistoryID)
+	}
+	if err := s.repo.SetTechnologies(workHistoryID, technologyIDs); err != nil {
+		return fmt.Errorf("error setting work history technologies: %w", err)
+	}
+	return nil
 }
