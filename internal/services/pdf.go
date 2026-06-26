@@ -34,9 +34,15 @@ type ProfileGetter interface {
 	Get() (repository.Profile, error)
 }
 
+// AboutMeGetter интерфейс для получения секции «О себе»
+type AboutMeGetter interface {
+	GetAboutMe() (dto.AboutMeDTO, error)
+}
+
 // PDFService генерирует PDF-резюме из данных БД
 type PDFService struct {
 	profile ProfileGetter
+	aboutMe AboutMeGetter
 	wh      *WorkHistoryService
 	tech    *TechService
 	edu     *EducationService
@@ -45,12 +51,14 @@ type PDFService struct {
 // NewPDFService создает новый экземпляр сервиса генерации PDF
 func NewPDFService(
 	profile ProfileGetter,
+	aboutMe AboutMeGetter,
 	wh *WorkHistoryService,
 	tech *TechService,
 	edu *EducationService,
 ) *PDFService {
 	return &PDFService{
 		profile: profile,
+		aboutMe: aboutMe,
 		wh:      wh,
 		tech:    tech,
 		edu:     edu,
@@ -89,6 +97,15 @@ func (s *PDFService) GenerateCV() ([]byte, error) {
 	pdf.AddPage()
 
 	pdfRenderHeader(pdf, profile)
+
+	aboutMe, err := s.aboutMe.GetAboutMe()
+	if err != nil {
+		return nil, fmt.Errorf("pdf: get about me: %w", err)
+	}
+	if pdfAboutMeHasContent(aboutMe) {
+		pdfSectionTitle(pdf, "О СЕБЕ")
+		pdfAboutMe(pdf, aboutMe)
+	}
 
 	if len(whResult.Content) > 0 {
 		pdfSectionTitle(pdf, "ОПЫТ РАБОТЫ")
@@ -157,6 +174,65 @@ func pdfBuildContacts(p repository.Profile) string {
 		parts = append(parts, *p.GitHub)
 	}
 	return strings.Join(parts, sep)
+}
+
+func pdfAboutMeHasContent(aboutMe dto.AboutMeDTO) bool {
+	if len(aboutMe.BioParagraphs) > 0 {
+		return true
+	}
+	if len(aboutMe.Technologies) > 0 {
+		return true
+	}
+	if aboutMe.Note != nil && strings.TrimSpace(*aboutMe.Note) != "" {
+		return true
+	}
+	if aboutMe.Hobbies != nil && strings.TrimSpace(*aboutMe.Hobbies) != "" {
+		return true
+	}
+	return false
+}
+
+// pdfAboutMe рисует секцию «О себе»: биография, бейджи технологий, заметка и хобби
+func pdfAboutMe(pdf *fpdf.Fpdf, aboutMe dto.AboutMeDTO) {
+	pdf.SetFont("DejaVu", "", 9)
+	for _, paragraph := range aboutMe.BioParagraphs {
+		if strings.TrimSpace(paragraph) == "" {
+			continue
+		}
+		pdf.SetX(pdfMargin)
+		pdf.MultiCell(pdfContentW, pdfLineH, paragraph, "", "L", false)
+		pdf.SetY(pdf.GetY() + 1)
+	}
+
+	if len(aboutMe.Technologies) > 0 {
+		names := make([]string, 0, len(aboutMe.Technologies))
+		for _, t := range aboutMe.Technologies {
+			names = append(names, t.Title)
+		}
+		pdf.SetX(pdfMargin)
+		pdf.SetFont("DejaVu", "B", 9)
+		pdf.CellFormat(24, pdfLineH, "Стек:", "", 0, "L", false, 0, "")
+		pdf.SetFont("DejaVu", "", 9)
+		pdf.MultiCell(pdfContentW-24, pdfLineH, strings.Join(names, "  •  "), "", "L", false)
+	}
+
+	if aboutMe.Note != nil && strings.TrimSpace(*aboutMe.Note) != "" {
+		pdf.SetX(pdfMargin)
+		pdf.SetFont("DejaVu", "", 9)
+		pdf.SetTextColor(90, 90, 90)
+		pdf.MultiCell(pdfContentW, pdfLineH, *aboutMe.Note, "", "L", false)
+		pdf.SetTextColor(0, 0, 0)
+	}
+
+	if aboutMe.Hobbies != nil && strings.TrimSpace(*aboutMe.Hobbies) != "" {
+		pdf.SetX(pdfMargin)
+		pdf.SetFont("DejaVu", "", 9)
+		pdf.SetTextColor(90, 90, 90)
+		pdf.MultiCell(pdfContentW, pdfLineH, *aboutMe.Hobbies, "", "L", false)
+		pdf.SetTextColor(0, 0, 0)
+	}
+
+	pdf.SetY(pdf.GetY() + 2)
 }
 
 // pdfSectionTitle рисует заголовок секции с цветным фоном

@@ -84,7 +84,7 @@ func initApplication(ctx context.Context, db *dbconn.DB, cfg *config.Config) (*r
 	eduSvc := services.NewEducationService(repos.EducationRepository)
 	whSvc := services.NewWorkHistoryService(repos.WorkHistoryRepository)
 	profileSvc := services.NewProfileService(repos.ProfileRepository)
-	pdfSvc := services.NewPDFService(repos.ProfileRepository, whSvc, techSvc, eduSvc)
+	pdfSvc := services.NewPDFService(repos.ProfileRepository, profileSvc, whSvc, techSvc, eduSvc)
 
 	deps := &router.Dependencies{
 		TagService:         tagSvc,
