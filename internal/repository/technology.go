@@ -12,9 +12,6 @@ import (
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
-
-
-
 type TechnologyRepo struct {
 	db *sql.DB
 }
@@ -24,6 +21,7 @@ func NewTechnologyRepo(db *sql.DB) *TechnologyRepo {
 		db: db,
 	}
 }
+
 // DeleteList удаляет список технологий по ID
 func (t *TechnologyRepo) DeleteList(ids []int64) ([]int64, error) {
 	if len(ids) == 0 {
@@ -76,7 +74,7 @@ func (t *TechnologyRepo) Delete(id int64) (int64, error) {
 // Get получает одну технологию по ID
 func (t *TechnologyRepo) Get(id int64) (models.Technology, error) {
 	query := "SELECT id, title, description, logo_url FROM technology WHERE id = $1"
-	
+
 	var technology models.Technology
 	err := t.db.QueryRow(query, id).Scan(
 		&technology.ID,
@@ -84,7 +82,7 @@ func (t *TechnologyRepo) Get(id int64) (models.Technology, error) {
 		&technology.Description,
 		&technology.LogoUrl,
 	)
-	
+
 	if err == sql.ErrNoRows {
 		return models.Technology{}, fmt.Errorf("technology with id %d: %w", id, apierrors.ErrNotFound)
 	}
@@ -116,7 +114,7 @@ func (t *TechnologyRepo) List(req entityreqdecorator.PagebleRq) (entityreqdecora
 	var technologies []models.Technology
 	for rows.Next() {
 		var technology models.Technology
-		err := rows.Scan(&technology.ID, &technology.Title, &technology.Description,  &technology.LogoUrl)
+		err := rows.Scan(&technology.ID, &technology.Title, &technology.Description, &technology.LogoUrl)
 		if err != nil {
 			return entityreqdecorator.PagebleRs[models.Technology]{}, fmt.Errorf("failed to scan technology: %w", err)
 		}
@@ -134,6 +132,7 @@ func (t *TechnologyRepo) List(req entityreqdecorator.PagebleRq) (entityreqdecora
 		Sort:    req.Sort,
 	}, nil
 }
+
 // Create создает новую технологию
 func (t *TechnologyRepo) Create(technology models.Technology) (models.Technology, error) {
 	query := `
@@ -290,7 +289,7 @@ func (t *TechnologyRepo) ListWithTags(req entityreqdecorator.PagebleRq) (entityr
 	limit := total
 	if req.Size > 0 {
 		limit = req.Size
-		offset = req.Page * req.Size
+		offset = (req.Page - 1) * req.Size
 	}
 
 	selectQuery := `

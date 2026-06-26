@@ -511,11 +511,12 @@ func (rt *Router) adminHistoryPost(w http.ResponseWriter, r *http.Request) {
 	case "PUT":
 		idStr := r.FormValue("id")
 		id, _ := strconv.ParseInt(idStr, 10, 64)
+		logoUrlPut := r.FormValue("logoUrl")
 		wh := models.WorkHistory{
 			ID:          id,
 			Name:        r.FormValue("name"),
 			About:       r.FormValue("about"),
-			LogoUrl:     []byte(r.FormValue("logoUrl")),
+			LogoUrl:     pgtype.Text{String: logoUrlPut, Valid: logoUrlPut != ""},
 			PeriodStart: parseDate(r.FormValue("periodStart")),
 			PeriodEnd:   parseDate(r.FormValue("periodEnd")),
 			WhatIDid:    parseLines(r.FormValue("whatIDid")),
@@ -525,10 +526,11 @@ func (rt *Router) adminHistoryPost(w http.ResponseWriter, r *http.Request) {
 			slog.Error(err.Error())
 		}
 	default:
+		logoUrlPost := r.FormValue("logoUrl")
 		wh := models.WorkHistory{
 			Name:        r.FormValue("name"),
 			About:       r.FormValue("about"),
-			LogoUrl:     []byte(r.FormValue("logoUrl")),
+			LogoUrl:     pgtype.Text{String: logoUrlPost, Valid: logoUrlPost != ""},
 			PeriodStart: parseDate(r.FormValue("periodStart")),
 			PeriodEnd:   parseDate(r.FormValue("periodEnd")),
 			WhatIDid:    parseLines(r.FormValue("whatIDid")),

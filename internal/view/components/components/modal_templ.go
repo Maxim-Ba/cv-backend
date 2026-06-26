@@ -5,11 +5,11 @@ package components
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
-import "github.com/a-h/templ"
-import templruntime "github.com/a-h/templ/runtime"
-
 import (
 	"strconv"
+
+	"github.com/a-h/templ"
+	templruntime "github.com/a-h/templ/runtime"
 
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 )
@@ -593,13 +593,13 @@ func WorkHistoryFormData(wh models.WorkHistory, csrfToken string, isEdit bool) E
 				Value:       wh.About,
 				Placeholder: "Краткое описание компании",
 				IsTextArea:  true,
-				Required:    false,
+				Required:    true,
 			},
 			{
 				Name:        "logoUrl",
 				Label:       "URL логотипа",
 				Type:        "url",
-				Value:       string(wh.LogoUrl),
+				Value:       wh.LogoUrl.String,
 				Placeholder: "https://example.com/logo.png",
 				Required:    false,
 			},

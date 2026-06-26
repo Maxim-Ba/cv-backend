@@ -81,7 +81,7 @@ func (w *WorkHistoryRepo) Get(id int64) (models.WorkHistory, error) {
 		FROM work_history
 		WHERE id = $1
 	`
-	
+
 	var workHistory models.WorkHistory
 	err := w.db.QueryRow(query, id).Scan(
 		&workHistory.ID,
@@ -93,7 +93,7 @@ func (w *WorkHistoryRepo) Get(id int64) (models.WorkHistory, error) {
 		pq.Array(&workHistory.WhatIDid),
 		pq.Array(&workHistory.Projects),
 	)
-	
+
 	if err == sql.ErrNoRows {
 		return models.WorkHistory{}, fmt.Errorf("work history with id %d: %w", id, apierrors.ErrNotFound)
 	}
@@ -291,7 +291,7 @@ func (w *WorkHistoryRepo) GetWithTechnologies(id int64) (dto.WorkHistoryWithTech
 			whID        int64
 			name        string
 			about       string
-			logoUrlBytes []byte
+			logoUrl     sql.NullString
 			periodStart sql.NullTime
 			periodEnd   sql.NullTime
 			whatIDid    []string
@@ -305,7 +305,7 @@ func (w *WorkHistoryRepo) GetWithTechnologies(id int64) (dto.WorkHistoryWithTech
 			tagHexColor sql.NullString
 		)
 		if err := rows.Scan(
-			&whID, &name, &about, &logoUrlBytes,
+			&whID, &name, &about, &logoUrl,
 			&periodStart, &periodEnd,
 			pq.Array(&whatIDid), pq.Array(&projects),
 			&techID, &techTitle, &techDesc, &techLogo,
@@ -319,7 +319,7 @@ func (w *WorkHistoryRepo) GetWithTechnologies(id int64) (dto.WorkHistoryWithTech
 					ID:          whID,
 					Name:        name,
 					About:       about,
-					LogoUrl:     string(logoUrlBytes),
+					LogoUrl:     logoUrl.String,
 					PeriodStart: nullTimeToString(periodStart),
 					PeriodEnd:   nullTimeToString(periodEnd),
 					WhatIDid:    whatIDid,
@@ -380,7 +380,7 @@ func (w *WorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.PagebleRq)
 	limit := total
 	if req.Size > 0 {
 		limit = req.Size
-		offset = req.Page * req.Size
+		offset = (req.Page - 1) * req.Size
 	}
 
 	// Получаем ID истории работы с пагинацией
@@ -439,24 +439,24 @@ func (w *WorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.PagebleRq)
 
 	for rows.Next() {
 		var (
-			whID         int64
-			name         string
-			about        string
-			logoUrlBytes []byte
-			periodStart  sql.NullTime
-			periodEnd    sql.NullTime
-			whatIDid     []string
-			projects     []string
-			techID       sql.NullInt64
-			techTitle    sql.NullString
-			techDesc     sql.NullString
-			techLogo     sql.NullString
-			tagID        sql.NullInt64
-			tagName      sql.NullString
-			tagHexColor  sql.NullString
+			whID        int64
+			name        string
+			about       string
+			logoUrl     sql.NullString
+			periodStart sql.NullTime
+			periodEnd   sql.NullTime
+			whatIDid    []string
+			projects    []string
+			techID      sql.NullInt64
+			techTitle   sql.NullString
+			techDesc    sql.NullString
+			techLogo    sql.NullString
+			tagID       sql.NullInt64
+			tagName     sql.NullString
+			tagHexColor sql.NullString
 		)
 		if err := rows.Scan(
-			&whID, &name, &about, &logoUrlBytes,
+			&whID, &name, &about, &logoUrl,
 			&periodStart, &periodEnd,
 			pq.Array(&whatIDid), pq.Array(&projects),
 			&techID, &techTitle, &techDesc, &techLogo,
@@ -471,7 +471,7 @@ func (w *WorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.PagebleRq)
 					ID:          whID,
 					Name:        name,
 					About:       about,
-					LogoUrl:     string(logoUrlBytes),
+					LogoUrl:     logoUrl.String,
 					PeriodStart: nullTimeToString(periodStart),
 					PeriodEnd:   nullTimeToString(periodEnd),
 					WhatIDid:    whatIDid,

@@ -75,7 +75,7 @@ func (m *MockWorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.Pagebl
 // TestWorkHistoryService_Get тестирует метод Get
 func TestWorkHistoryService_Get(t *testing.T) {
 	testDate := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
-	
+
 	tests := []struct {
 		name      string
 		id        int64
@@ -91,7 +91,7 @@ func TestWorkHistoryService_Get(t *testing.T) {
 				ID:          1,
 				Name:        "Яндекс",
 				About:       "Работал Backend разработчиком",
-				LogoUrl:     []byte("logo.png"),
+				LogoUrl:     pgtype.Text{String: "logo.png", Valid: true},
 				PeriodStart: pgtype.Date{Time: testDate, Valid: true},
 				PeriodEnd:   pgtype.Date{Time: testDate.AddDate(2, 0, 0), Valid: true},
 				WhatIDid:    []string{"Разработка API", "Оптимизация БД"},
@@ -160,7 +160,7 @@ func TestWorkHistoryService_Get(t *testing.T) {
 // TestWorkHistoryService_List тестирует метод List
 func TestWorkHistoryService_List(t *testing.T) {
 	testDate := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
-	
+
 	tests := []struct {
 		name       string
 		request    entityreqdecorator.PagebleRq
@@ -249,7 +249,7 @@ func TestWorkHistoryService_List(t *testing.T) {
 // TestWorkHistoryService_Create тестирует метод Create
 func TestWorkHistoryService_Create(t *testing.T) {
 	testDate := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
-	
+
 	tests := []struct {
 		name      string
 		wh        models.WorkHistory
@@ -263,7 +263,7 @@ func TestWorkHistoryService_Create(t *testing.T) {
 			wh: models.WorkHistory{
 				Name:        "Тинькофф",
 				About:       "Go разработчик",
-				LogoUrl:     []byte("tinkoff.png"),
+				LogoUrl:     pgtype.Text{String: "tinkoff.png", Valid: true},
 				PeriodStart: pgtype.Date{Time: testDate, Valid: true},
 				PeriodEnd:   pgtype.Date{Time: testDate.AddDate(1, 0, 0), Valid: true},
 				WhatIDid:    []string{"Микросервисы", "Kafka"},
@@ -273,7 +273,7 @@ func TestWorkHistoryService_Create(t *testing.T) {
 				ID:          3,
 				Name:        "Тинькофф",
 				About:       "Go разработчик",
-				LogoUrl:     []byte("tinkoff.png"),
+				LogoUrl:     pgtype.Text{String: "tinkoff.png", Valid: true},
 				PeriodStart: pgtype.Date{Time: testDate, Valid: true},
 				PeriodEnd:   pgtype.Date{Time: testDate.AddDate(1, 0, 0), Valid: true},
 				WhatIDid:    []string{"Микросервисы", "Kafka"},
@@ -353,7 +353,7 @@ func TestWorkHistoryService_Create(t *testing.T) {
 // TestWorkHistoryService_Update тестирует метод Update
 func TestWorkHistoryService_Update(t *testing.T) {
 	testDate := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
-	
+
 	tests := []struct {
 		name      string
 		wh        models.WorkHistory

@@ -102,7 +102,7 @@ func (wh *WorkHistoryHandler) WorkHistoryCreate(w http.ResponseWriter, r *http.R
 	var reqData struct {
 		Name        string   `json:"name"`
 		About       string   `json:"about"`
-		LogoUrl     []byte   `json:"logoUrl"`
+		LogoUrl     string   `json:"logoUrl"`
 		PeriodStart string   `json:"periodStart"`
 		PeriodEnd   string   `json:"periodEnd"`
 		WhatIDid    []string `json:"whatIDid"`
@@ -132,7 +132,7 @@ func (wh *WorkHistoryHandler) WorkHistoryCreate(w http.ResponseWriter, r *http.R
 	workHistory := models.WorkHistory{
 		Name:        reqData.Name,
 		About:       reqData.About,
-		LogoUrl:     reqData.LogoUrl,
+		LogoUrl:     pgtype.Text{String: reqData.LogoUrl, Valid: reqData.LogoUrl != ""},
 		PeriodStart: periodStart,
 		PeriodEnd:   periodEnd,
 		WhatIDid:    reqData.WhatIDid,
@@ -221,7 +221,7 @@ func (wh *WorkHistoryHandler) WorkHistoryUpdate(w http.ResponseWriter, r *http.R
 		ID          int64    `json:"id"`
 		Name        string   `json:"name"`
 		About       string   `json:"about"`
-		LogoUrl     []byte   `json:"logoUrl"`
+		LogoUrl     string   `json:"logoUrl"`
 		PeriodStart string   `json:"periodStart"`
 		PeriodEnd   string   `json:"periodEnd"`
 		WhatIDid    []string `json:"whatIDid"`
@@ -252,7 +252,7 @@ func (wh *WorkHistoryHandler) WorkHistoryUpdate(w http.ResponseWriter, r *http.R
 		ID:          reqData.ID,
 		Name:        reqData.Name,
 		About:       reqData.About,
-		LogoUrl:     reqData.LogoUrl,
+		LogoUrl:     pgtype.Text{String: reqData.LogoUrl, Valid: reqData.LogoUrl != ""},
 		PeriodStart: periodStart,
 		PeriodEnd:   periodEnd,
 		WhatIDid:    reqData.WhatIDid,
