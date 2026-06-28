@@ -4,6 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/go-pdf/fpdf"
@@ -21,8 +22,9 @@ var dejaVuRegular []byte
 var dejaVuBold []byte
 
 const (
-	pdfMargin      = 15.0
-	pdfContentW    = 180.0
+	pdfPageW       = 210.0
+	pdfMargin      = 7.5
+	pdfContentW    = pdfPageW - 2*pdfMargin
 	pdfLineH       = 5.5
 	pdfHeaderBgR   = 41
 	pdfHeaderBgG   = 65
@@ -93,7 +95,7 @@ func (s *PDFService) GenerateCV() ([]byte, error) {
 	pdf.AddUTF8FontFromBytes("DejaVu", "", dejaVuRegular)
 	pdf.AddUTF8FontFromBytes("DejaVu", "B", dejaVuBold)
 	pdf.SetMargins(pdfMargin, pdfMargin, pdfMargin)
-	pdf.SetAutoPageBreak(true, 15)
+	pdf.SetAutoPageBreak(true, pdfMargin)
 	pdf.AddPage()
 
 	pdfRenderHeader(pdf, profile)
@@ -253,7 +255,7 @@ func pdfWorkItem(pdf *fpdf.Fpdf, w dto.WorkHistoryWithTechnologiesDTO) {
 
 	pdf.SetX(pdfMargin)
 	pdf.SetFont("DejaVu", "B", 10)
-	pdf.CellFormat(125, 6, w.Name, "", 0, "L", false, 0, "")
+	pdf.CellFormat(pdfContentW-55, 6, w.Name, "", 0, "L", false, 0, "")
 	pdf.SetFont("DejaVu", "", 8)
 	pdf.SetTextColor(90, 90, 90)
 	pdf.CellFormat(55, 6, period, "", 1, "R", false, 0, "")
@@ -292,46 +294,24 @@ func pdfWorkItem(pdf *fpdf.Fpdf, w dto.WorkHistoryWithTechnologiesDTO) {
 	}
 
 	pdf.SetDrawColor(210, 210, 220)
-	pdf.Line(pdfMargin, pdf.GetY()+1, 210-pdfMargin, pdf.GetY()+1)
+	pdf.Line(pdfMargin, pdf.GetY()+1, pdfPageW-pdfMargin, pdf.GetY()+1)
 	pdf.SetDrawColor(0, 0, 0)
 	pdf.SetY(pdf.GetY() + 4)
 }
 
-// pdfTechnologies рисует технологии, сгруппированные по тегам
+// pdfTechnologies рисует технологии в алфавитном порядке
 func pdfTechnologies(pdf *fpdf.Fpdf, techs []dto.TechnologyWithTagsDTO) {
-	tagMap := make(map[string][]string)
-	tagOrder := []string{}
-
+	names := make([]string, 0, len(techs))
 	for _, t := range techs {
-		if len(t.Tags) == 0 {
-			const other = "Другое"
-			if _, ok := tagMap[other]; !ok {
-				tagOrder = append(tagOrder, other)
-			}
-			if !pdfContains(tagMap[other], t.Title) {
-				tagMap[other] = append(tagMap[other], t.Title)
-			}
-			continue
-		}
-		for _, tag := range t.Tags {
-			if _, ok := tagMap[tag.Name]; !ok {
-				tagOrder = append(tagOrder, tag.Name)
-			}
-			if !pdfContains(tagMap[tag.Name], t.Title) {
-				tagMap[tag.Name] = append(tagMap[tag.Name], t.Title)
-			}
+		if strings.TrimSpace(t.Title) != "" {
+			names = append(names, t.Title)
 		}
 	}
+	sort.Strings(names)
 
-	for _, tagName := range tagOrder {
-		list := tagMap[tagName]
-		pdf.SetX(pdfMargin)
-		pdf.SetFont("DejaVu", "B", 9)
-		label := "[" + tagName + "]"
-		pdf.CellFormat(32, pdfLineH, label, "", 0, "L", false, 0, "")
-		pdf.SetFont("DejaVu", "", 9)
-		pdf.MultiCell(pdfContentW-32, pdfLineH, strings.Join(list, "  •  "), "", "L", false)
-	}
+	pdf.SetX(pdfMargin)
+	pdf.SetFont("DejaVu", "", 9)
+	pdf.MultiCell(pdfContentW, pdfLineH, strings.Join(names, "  •  "), "", "L", false)
 	pdf.SetY(pdf.GetY() + 2)
 }
 
@@ -383,11 +363,3 @@ func pdfFormatDate(iso string) string {
 	return fmt.Sprintf("%s %d", pdfMonthRu[month], year)
 }
 
-func pdfContains(slice []string, s string) bool {
-	for _, v := range slice {
-		if v == s {
-			return true
-		}
-	}
-	return false
-}

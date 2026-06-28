@@ -24,6 +24,16 @@ func TestParseQueryParams(t *testing.T) {
 			},
 		},
 		{
+			name: "size zero returns all records",
+			queryParams: map[string][]string{
+				"size": {"0"},
+			},
+			want: PagebleRq{
+				Size: 0,
+				Page: PAGE,
+			},
+		},
+		{
 			name:        "empty parameters",
 			queryParams: map[string][]string{},
 			want: PagebleRq{

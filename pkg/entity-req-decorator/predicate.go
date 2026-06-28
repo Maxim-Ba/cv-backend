@@ -26,7 +26,7 @@ func ParseQueryParams(queryParams map[string][]string) PagebleRq {
 	}
 
 	if sizeStr, ok := queryParams["size"]; ok && len(sizeStr) > 0 {
-		if size, err := strconv.Atoi(sizeStr[0]); err == nil && size > 0 {
+		if size, err := strconv.Atoi(sizeStr[0]); err == nil && size >= 0 {
 			req.Size = size
 		}
 	}
