@@ -25,6 +25,7 @@ type TechnologyWithTagsDTO struct {
 type WorkHistoryDTO struct {
 	ID          int64    `json:"id"`
 	Name        string   `json:"name"`
+	JobTitle    string   `json:"jobTitle"`
 	About       string   `json:"about"`
 	LogoUrl     string   `json:"logoUrl"`
 	PeriodStart *string  `json:"periodStart"`

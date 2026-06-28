@@ -56,8 +56,8 @@ SELECT * FROM work_history
 ORDER BY period_start DESC;
 
 -- name: CreateWorkHistory :one
-INSERT INTO work_history (id, name, about, logo_url, period_start, period_end, what_i_did, projects)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+INSERT INTO work_history (id, name, about, logo_url, period_start, period_end, what_i_did, projects, job_title)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING *;
 
 -- name: GetTechnologiesByTag :many

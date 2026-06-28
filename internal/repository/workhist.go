@@ -77,7 +77,7 @@ func (w *WorkHistoryRepo) Delete(id int64) (int64, error) {
 // Get получает одну запись истории работы по ID
 func (w *WorkHistoryRepo) Get(id int64) (models.WorkHistory, error) {
 	query := `
-		SELECT id, name, about, logo_url, period_start, period_end, what_i_did, projects
+		SELECT id, name, about, logo_url, period_start, period_end, what_i_did, projects, job_title
 		FROM work_history
 		WHERE id = $1
 	`
@@ -92,6 +92,7 @@ func (w *WorkHistoryRepo) Get(id int64) (models.WorkHistory, error) {
 		&workHistory.PeriodEnd,
 		pq.Array(&workHistory.WhatIDid),
 		pq.Array(&workHistory.Projects),
+		&workHistory.JobTitle,
 	)
 
 	if err == sql.ErrNoRows {
@@ -107,7 +108,7 @@ func (w *WorkHistoryRepo) Get(id int64) (models.WorkHistory, error) {
 // List получает список записей истории работы с пагинацией, сортировкой и фильтрацией
 func (w *WorkHistoryRepo) List(req entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[models.WorkHistory], error) {
 	baseQuery := `
-		SELECT id, name, about, logo_url, period_start, period_end, what_i_did, projects
+		SELECT id, name, about, logo_url, period_start, period_end, what_i_did, projects, job_title
 		FROM work_history
 	`
 
@@ -141,6 +142,7 @@ func (w *WorkHistoryRepo) List(req entityreqdecorator.PagebleRq) (entityreqdecor
 			&workHistory.PeriodEnd,
 			pq.Array(&workHistory.WhatIDid),
 			pq.Array(&workHistory.Projects),
+			&workHistory.JobTitle,
 		)
 		if err != nil {
 			return entityreqdecorator.PagebleRs[models.WorkHistory]{}, fmt.Errorf("failed to scan work history: %w", err)
@@ -164,9 +166,9 @@ func (w *WorkHistoryRepo) List(req entityreqdecorator.PagebleRq) (entityreqdecor
 // Create создает новую запись истории работы
 func (w *WorkHistoryRepo) Create(workHistory models.WorkHistory) (models.WorkHistory, error) {
 	query := `
-		INSERT INTO work_history (name, about, logo_url, period_start, period_end, what_i_did, projects)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		RETURNING id, name, about, logo_url, period_start, period_end, what_i_did, projects
+		INSERT INTO work_history (name, about, logo_url, period_start, period_end, what_i_did, projects, job_title)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING id, name, about, logo_url, period_start, period_end, what_i_did, projects, job_title
 	`
 
 	var created models.WorkHistory
@@ -179,6 +181,7 @@ func (w *WorkHistoryRepo) Create(workHistory models.WorkHistory) (models.WorkHis
 		workHistory.PeriodEnd,
 		pq.Array(workHistory.WhatIDid),
 		pq.Array(workHistory.Projects),
+		workHistory.JobTitle,
 	).Scan(
 		&created.ID,
 		&created.Name,
@@ -188,6 +191,7 @@ func (w *WorkHistoryRepo) Create(workHistory models.WorkHistory) (models.WorkHis
 		&created.PeriodEnd,
 		pq.Array(&created.WhatIDid),
 		pq.Array(&created.Projects),
+		&created.JobTitle,
 	)
 
 	if err != nil {
@@ -202,9 +206,9 @@ func (w *WorkHistoryRepo) Update(workHistory models.WorkHistory) (models.WorkHis
 	query := `
 		UPDATE work_history
 		SET name = $2, about = $3, logo_url = $4, period_start = $5, 
-		    period_end = $6, what_i_did = $7, projects = $8
+		    period_end = $6, what_i_did = $7, projects = $8, job_title = $9
 		WHERE id = $1
-		RETURNING id, name, about, logo_url, period_start, period_end, what_i_did, projects
+		RETURNING id, name, about, logo_url, period_start, period_end, what_i_did, projects, job_title
 	`
 
 	var updated models.WorkHistory
@@ -218,6 +222,7 @@ func (w *WorkHistoryRepo) Update(workHistory models.WorkHistory) (models.WorkHis
 		workHistory.PeriodEnd,
 		pq.Array(workHistory.WhatIDid),
 		pq.Array(workHistory.Projects),
+		workHistory.JobTitle,
 	).Scan(
 		&updated.ID,
 		&updated.Name,
@@ -227,6 +232,7 @@ func (w *WorkHistoryRepo) Update(workHistory models.WorkHistory) (models.WorkHis
 		&updated.PeriodEnd,
 		pq.Array(&updated.WhatIDid),
 		pq.Array(&updated.Projects),
+		&updated.JobTitle,
 	)
 
 	if err == sql.ErrNoRows {
@@ -245,6 +251,7 @@ func (w *WorkHistoryRepo) isValidField(field string) bool {
 		"id":           true,
 		"name":         true,
 		"about":        true,
+		"job_title":    true,
 		"period_start": true,
 		"period_end":   true,
 	}
@@ -265,7 +272,7 @@ func (w *WorkHistoryRepo) GetWithTechnologies(id int64) (dto.WorkHistoryWithTech
 	query := `
 		SELECT wh.id, wh.name, wh.about, wh.logo_url,
 		       wh.period_start, wh.period_end,
-		       wh.what_i_did, wh.projects,
+		       wh.what_i_did, wh.projects, wh.job_title,
 		       t.id, t.title, t.description, t.logo_url,
 		       tg.id, tg.name, tg.hex_color
 		FROM work_history wh
@@ -296,6 +303,7 @@ func (w *WorkHistoryRepo) GetWithTechnologies(id int64) (dto.WorkHistoryWithTech
 			periodEnd   sql.NullTime
 			whatIDid    []string
 			projects    []string
+			jobTitle    sql.NullString
 			techID      sql.NullInt64
 			techTitle   sql.NullString
 			techDesc    sql.NullString
@@ -307,7 +315,7 @@ func (w *WorkHistoryRepo) GetWithTechnologies(id int64) (dto.WorkHistoryWithTech
 		if err := rows.Scan(
 			&whID, &name, &about, &logoUrl,
 			&periodStart, &periodEnd,
-			pq.Array(&whatIDid), pq.Array(&projects),
+			pq.Array(&whatIDid), pq.Array(&projects), &jobTitle,
 			&techID, &techTitle, &techDesc, &techLogo,
 			&tagID, &tagName, &tagHexColor,
 		); err != nil {
@@ -318,6 +326,7 @@ func (w *WorkHistoryRepo) GetWithTechnologies(id int64) (dto.WorkHistoryWithTech
 				WorkHistoryDTO: dto.WorkHistoryDTO{
 					ID:          whID,
 					Name:        name,
+					JobTitle:    jobTitle.String,
 					About:       about,
 					LogoUrl:     logoUrl.String,
 					PeriodStart: nullTimeToString(periodStart),
@@ -414,7 +423,7 @@ func (w *WorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.PagebleRq)
 	query := `
 		SELECT wh.id, wh.name, wh.about, wh.logo_url,
 		       wh.period_start, wh.period_end,
-		       wh.what_i_did, wh.projects,
+		       wh.what_i_did, wh.projects, wh.job_title,
 		       t.id, t.title, t.description, t.logo_url,
 		       tg.id, tg.name, tg.hex_color
 		FROM work_history wh
@@ -447,6 +456,7 @@ func (w *WorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.PagebleRq)
 			periodEnd   sql.NullTime
 			whatIDid    []string
 			projects    []string
+			jobTitle    sql.NullString
 			techID      sql.NullInt64
 			techTitle   sql.NullString
 			techDesc    sql.NullString
@@ -458,7 +468,7 @@ func (w *WorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.PagebleRq)
 		if err := rows.Scan(
 			&whID, &name, &about, &logoUrl,
 			&periodStart, &periodEnd,
-			pq.Array(&whatIDid), pq.Array(&projects),
+			pq.Array(&whatIDid), pq.Array(&projects), &jobTitle,
 			&techID, &techTitle, &techDesc, &techLogo,
 			&tagID, &tagName, &tagHexColor,
 		); err != nil {
@@ -470,6 +480,7 @@ func (w *WorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.PagebleRq)
 				WorkHistoryDTO: dto.WorkHistoryDTO{
 					ID:          whID,
 					Name:        name,
+					JobTitle:    jobTitle.String,
 					About:       about,
 					LogoUrl:     logoUrl.String,
 					PeriodStart: nullTimeToString(periodStart),

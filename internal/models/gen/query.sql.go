@@ -124,9 +124,9 @@ func (q *Queries) CreateTechnology(ctx context.Context, arg CreateTechnologyPara
 }
 
 const createWorkHistory = `-- name: CreateWorkHistory :one
-INSERT INTO work_history (id, name, about, logo_url, period_start, period_end, what_i_did, projects)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, name, about, logo_url, period_start, period_end, what_i_did, projects
+INSERT INTO work_history (id, name, about, logo_url, period_start, period_end, what_i_did, projects, job_title)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+RETURNING id, name, about, logo_url, period_start, period_end, what_i_did, projects, job_title
 `
 
 type CreateWorkHistoryParams struct {
@@ -138,6 +138,7 @@ type CreateWorkHistoryParams struct {
 	PeriodEnd   pgtype.Date `json:"periodEnd"`
 	WhatIDid    []string    `json:"whatIDid"`
 	Projects    []string    `json:"projects"`
+	JobTitle    pgtype.Text `json:"jobTitle"`
 }
 
 func (q *Queries) CreateWorkHistory(ctx context.Context, arg CreateWorkHistoryParams) (WorkHistory, error) {
@@ -150,6 +151,7 @@ func (q *Queries) CreateWorkHistory(ctx context.Context, arg CreateWorkHistoryPa
 		arg.PeriodEnd,
 		arg.WhatIDid,
 		arg.Projects,
+		arg.JobTitle,
 	)
 	var i WorkHistory
 	err := row.Scan(
@@ -161,6 +163,7 @@ func (q *Queries) CreateWorkHistory(ctx context.Context, arg CreateWorkHistoryPa
 		&i.PeriodEnd,
 		&i.WhatIDid,
 		&i.Projects,
+		&i.JobTitle,
 	)
 	return i, err
 }
@@ -287,7 +290,7 @@ func (q *Queries) GetTechnology(ctx context.Context, id int64) (Technology, erro
 }
 
 const getWorkHistory = `-- name: GetWorkHistory :one
-SELECT id, name, about, logo_url, period_start, period_end, what_i_did, projects FROM work_history
+SELECT id, name, about, logo_url, period_start, period_end, what_i_did, projects, job_title FROM work_history
 WHERE id = $1
 `
 
@@ -303,6 +306,7 @@ func (q *Queries) GetWorkHistory(ctx context.Context, id int64) (WorkHistory, er
 		&i.PeriodEnd,
 		&i.WhatIDid,
 		&i.Projects,
+		&i.JobTitle,
 	)
 	return i, err
 }
@@ -394,7 +398,7 @@ func (q *Queries) ListTechnologies(ctx context.Context) ([]Technology, error) {
 }
 
 const listWorkHistories = `-- name: ListWorkHistories :many
-SELECT id, name, about, logo_url, period_start, period_end, what_i_did, projects FROM work_history
+SELECT id, name, about, logo_url, period_start, period_end, what_i_did, projects, job_title FROM work_history
 ORDER BY period_start DESC
 `
 
@@ -416,6 +420,7 @@ func (q *Queries) ListWorkHistories(ctx context.Context) ([]WorkHistory, error) 
 			&i.PeriodEnd,
 			&i.WhatIDid,
 			&i.Projects,
+			&i.JobTitle,
 		); err != nil {
 			return nil, err
 		}

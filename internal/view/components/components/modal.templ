@@ -357,6 +357,14 @@ func WorkHistoryFormData(wh models.WorkHistory, allTechnologies []models.Technol
 				Required:    true,
 			},
 			{
+				Name:        "jobTitle",
+				Label:       "Должность",
+				Type:        "text",
+				Value:       wh.JobTitle.String,
+				Placeholder: "Senior Backend Developer",
+				Required:    false,
+			},
+			{
 				Name:        "about",
 				Label:       "О компании",
 				Type:        "text",

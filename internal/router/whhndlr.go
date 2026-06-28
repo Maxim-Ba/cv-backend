@@ -101,6 +101,7 @@ func (wh *WorkHistoryHandler) WorkHistoryList(w http.ResponseWriter, r *http.Req
 func (wh *WorkHistoryHandler) WorkHistoryCreate(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
 		Name          string   `json:"name"`
+		JobTitle      string   `json:"jobTitle"`
 		About         string   `json:"about"`
 		LogoUrl       string   `json:"logoUrl"`
 		PeriodStart   string   `json:"periodStart"`
@@ -132,6 +133,7 @@ func (wh *WorkHistoryHandler) WorkHistoryCreate(w http.ResponseWriter, r *http.R
 
 	workHistory := models.WorkHistory{
 		Name:        reqData.Name,
+		JobTitle:    pgtype.Text{String: reqData.JobTitle, Valid: reqData.JobTitle != ""},
 		About:       reqData.About,
 		LogoUrl:     pgtype.Text{String: reqData.LogoUrl, Valid: reqData.LogoUrl != ""},
 		PeriodStart: periodStart,
@@ -225,6 +227,7 @@ func (wh *WorkHistoryHandler) WorkHistoryUpdate(w http.ResponseWriter, r *http.R
 	var reqData struct {
 		ID            int64    `json:"id"`
 		Name          string   `json:"name"`
+		JobTitle      string   `json:"jobTitle"`
 		About         string   `json:"about"`
 		LogoUrl       string   `json:"logoUrl"`
 		PeriodStart   string   `json:"periodStart"`
@@ -257,6 +260,7 @@ func (wh *WorkHistoryHandler) WorkHistoryUpdate(w http.ResponseWriter, r *http.R
 	workHistory := models.WorkHistory{
 		ID:          reqData.ID,
 		Name:        reqData.Name,
+		JobTitle:    pgtype.Text{String: reqData.JobTitle, Valid: reqData.JobTitle != ""},
 		About:       reqData.About,
 		LogoUrl:     pgtype.Text{String: reqData.LogoUrl, Valid: reqData.LogoUrl != ""},
 		PeriodStart: periodStart,

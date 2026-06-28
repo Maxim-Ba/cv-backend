@@ -573,9 +573,11 @@ func (rt *Router) adminHistoryPost(w http.ResponseWriter, r *http.Request) {
 		idStr := r.FormValue("id")
 		id, _ := strconv.ParseInt(idStr, 10, 64)
 		logoUrlPut := r.FormValue("logoUrl")
+		jobTitlePut := r.FormValue("jobTitle")
 		wh := models.WorkHistory{
 			ID:          id,
 			Name:        r.FormValue("name"),
+			JobTitle:    pgtype.Text{String: jobTitlePut, Valid: jobTitlePut != ""},
 			About:       r.FormValue("about"),
 			LogoUrl:     pgtype.Text{String: logoUrlPut, Valid: logoUrlPut != ""},
 			PeriodStart: parseDate(r.FormValue("periodStart")),
@@ -590,8 +592,10 @@ func (rt *Router) adminHistoryPost(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		logoUrlPost := r.FormValue("logoUrl")
+		jobTitlePost := r.FormValue("jobTitle")
 		wh := models.WorkHistory{
 			Name:        r.FormValue("name"),
+			JobTitle:    pgtype.Text{String: jobTitlePost, Valid: jobTitlePost != ""},
 			About:       r.FormValue("about"),
 			LogoUrl:     pgtype.Text{String: logoUrlPost, Valid: logoUrlPost != ""},
 			PeriodStart: parseDate(r.FormValue("periodStart")),

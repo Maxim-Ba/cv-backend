@@ -24,6 +24,7 @@ templ historyPage(whResult entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechn
 				<tr>
 					<th>ID</th>
 					<th>Название</th>
+					<th>Должность</th>
 					<th>О компании</th>
 					<th>Начало</th>
 					<th>Конец</th>
@@ -36,6 +37,7 @@ templ historyPage(whResult entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechn
 					<tr>
 						<td>{ strconv.FormatInt(wh.ID, 10) }</td>
 						<td>{ wh.Name }</td>
+						<td>{ wh.JobTitle }</td>
 						<td>{ wh.About }</td>
 						<td>
 							if wh.PeriodStart != nil {

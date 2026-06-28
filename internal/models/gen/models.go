@@ -61,6 +61,7 @@ type WorkHistory struct {
 	PeriodEnd   pgtype.Date `json:"periodEnd"`
 	WhatIDid    []string    `json:"whatIDid"`
 	Projects    []string    `json:"projects"`
+	JobTitle    pgtype.Text `json:"jobTitle"`
 }
 
 type WorkHistoryTechnology struct {

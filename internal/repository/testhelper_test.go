@@ -116,7 +116,8 @@ func runMigrations(db *sql.DB) error {
 			period_start DATE NOT NULL,
 			period_end DATE,
 			what_i_did TEXT[],
-			projects TEXT[]
+			projects TEXT[],
+			job_title TEXT
 		)`,
 		`CREATE TABLE IF NOT EXISTS work_history_technology (
 			work_history_id BIGINT NOT NULL REFERENCES work_history (id) ON DELETE CASCADE,
