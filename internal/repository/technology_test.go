@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"testing"
 
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
@@ -420,6 +421,101 @@ func TestTechnologyRepo_List_Sorting(t *testing.T) {
 	assert.Equal(t, "Zebra", result.Content[0].Title)
 	assert.Equal(t, "Middle", result.Content[1].Title)
 	assert.Equal(t, "Alpha", result.Content[2].Title)
+}
+
+func TestTechnologyRepo_ListWithTags_PaginationWithMultipleTagsPerTech(t *testing.T) {
+	cleanupAllTables(t)
+
+	techRepo := NewTechnologyRepo(testDB)
+	tagRepo := NewTagRepo(testDB)
+
+	tag1, err := tagRepo.Create(models.Tag{Name: "Backend", HexColor: "#111111"})
+	require.NoError(t, err)
+	tag2, err := tagRepo.Create(models.Tag{Name: "Language", HexColor: "#222222"})
+	require.NoError(t, err)
+
+	for i := 1; i <= 8; i++ {
+		tech, createErr := techRepo.Create(models.Technology{
+			Title:       fmt.Sprintf("Tech%d", i),
+			Description: newPgText(fmt.Sprintf("Description %d", i)),
+		})
+		require.NoError(t, createErr)
+		require.NoError(t, techRepo.SetTags(tech.ID, []int64{tag1.ID, tag2.ID}))
+	}
+
+	result, err := techRepo.ListWithTags(entityreqdecorator.PagebleRq{
+		Page: 1,
+		Size: 10,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 8, result.Total)
+	assert.Len(t, result.Content, 8, "LIMIT должен применяться к технологиям, а не к строкам JOIN")
+
+	for i, tech := range result.Content {
+		assert.Equal(t, int64(i+1), tech.ID)
+		assert.Len(t, tech.Tags, 2)
+	}
+}
+
+func TestTechnologyRepo_ListWithTags_PaginationPages(t *testing.T) {
+	cleanupAllTables(t)
+
+	techRepo := NewTechnologyRepo(testDB)
+	tagRepo := NewTagRepo(testDB)
+
+	tag1, err := tagRepo.Create(models.Tag{Name: "Common", HexColor: "#abcdef"})
+	require.NoError(t, err)
+	tag2, err := tagRepo.Create(models.Tag{Name: "Extra", HexColor: "#fedcba"})
+	require.NoError(t, err)
+
+	for i := 1; i <= 5; i++ {
+		tech, createErr := techRepo.Create(models.Technology{
+			Title: fmt.Sprintf("Tech%d", i),
+		})
+		require.NoError(t, createErr)
+		require.NoError(t, techRepo.SetTags(tech.ID, []int64{tag1.ID, tag2.ID}))
+	}
+
+	page1, err := techRepo.ListWithTags(entityreqdecorator.PagebleRq{Page: 1, Size: 2})
+	require.NoError(t, err)
+	assert.Equal(t, 5, page1.Total)
+	assert.Len(t, page1.Content, 2)
+	assert.Equal(t, int64(1), page1.Content[0].ID)
+	assert.Equal(t, int64(2), page1.Content[1].ID)
+
+	page2, err := techRepo.ListWithTags(entityreqdecorator.PagebleRq{Page: 2, Size: 2})
+	require.NoError(t, err)
+	assert.Equal(t, 5, page2.Total)
+	assert.Len(t, page2.Content, 2)
+	assert.Equal(t, int64(3), page2.Content[0].ID)
+	assert.Equal(t, int64(4), page2.Content[1].ID)
+
+	page3, err := techRepo.ListWithTags(entityreqdecorator.PagebleRq{Page: 3, Size: 2})
+	require.NoError(t, err)
+	assert.Equal(t, 5, page3.Total)
+	assert.Len(t, page3.Content, 1)
+	assert.Equal(t, int64(5), page3.Content[0].ID)
+}
+
+func TestTechnologyRepo_ListWithTags_SizeZeroReturnsAll(t *testing.T) {
+	cleanupAllTables(t)
+
+	techRepo := NewTechnologyRepo(testDB)
+	tagRepo := NewTagRepo(testDB)
+
+	tag, err := tagRepo.Create(models.Tag{Name: "Tag", HexColor: "#000000"})
+	require.NoError(t, err)
+
+	for i := 1; i <= 3; i++ {
+		tech, createErr := techRepo.Create(models.Technology{Title: fmt.Sprintf("Tech%d", i)})
+		require.NoError(t, createErr)
+		require.NoError(t, techRepo.SetTags(tech.ID, []int64{tag.ID}))
+	}
+
+	result, err := techRepo.ListWithTags(entityreqdecorator.PagebleRq{Page: 1, Size: 0})
+	require.NoError(t, err)
+	assert.Equal(t, 3, result.Total)
+	assert.Len(t, result.Content, 3)
 }
 
 func TestTechnologyRepo_SetTags(t *testing.T) {

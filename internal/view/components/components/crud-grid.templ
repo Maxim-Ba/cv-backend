@@ -16,6 +16,11 @@ templ CRUDGrid[T any](pageble entityreqdecorator.PagebleRs[T], entity Entity) {
 	if pageble.Total > 0 && pageble.Size > 0 {
 		totalPages = (int(pageble.Total) + pageble.Size - 1) / pageble.Size
 	}
+	pageSize := pageble.Size
+	if pageSize <= 0 {
+		pageSize = entityreqdecorator.SIZE
+	}
+	pageSizeStr := strconv.Itoa(pageSize)
 	var displayName string
 	if entity.Name != "" {
 		caser := cases.Title(language.English)
@@ -31,7 +36,7 @@ templ CRUDGrid[T any](pageble entityreqdecorator.PagebleRs[T], entity Entity) {
 					<input type="number" name="page" value={ strconv.Itoa(pageble.Page) } placeholder="Page" class="form-control"/>
 				</div>
 				<div class="col-md-3">
-					<input type="number" name="size" value="20" placeholder="Elements on page" class="form-control"/>
+					<input type="number" name="size" value={ pageSizeStr } placeholder="Elements on page" class="form-control"/>
 				</div>
 				<div class="col-md-3">
 					<button type="submit" class="btn btn-primary">Applay filters</button>
@@ -44,17 +49,17 @@ templ CRUDGrid[T any](pageble entityreqdecorator.PagebleRs[T], entity Entity) {
 				<ul class="pagination">
 					if pageble.Page > 1 {
 						<li class="page-item">
-							<a class="page-link" href={ "/admin/" + entity.Name + "?page=" + strconv.Itoa(pageble.Page-1) + "&size=20" }>Prev</a>
+							<a class="page-link" href={ "/admin/" + entity.Name + "?page=" + strconv.Itoa(pageble.Page-1) + "&size=" + pageSizeStr }>Prev</a>
 						</li>
 					}
 					for i := 1; i <= totalPages; i++ {
 						<li class="page-item">
-							<a class="page-link" href={ "/admin/" + entity.Name + "?page=" + strconv.Itoa(i) + "&size=20" }>{ i }</a>
+							<a class="page-link" href={ "/admin/" + entity.Name + "?page=" + strconv.Itoa(i) + "&size=" + pageSizeStr }>{ i }</a>
 						</li>
 					}
 					if pageble.Page < totalPages {
 						<li class="page-item">
-							<a class="page-link" href={ "/admin/" + entity.Name + "?page=" + strconv.Itoa(pageble.Page+1) + "&size=20" }>Next</a>
+							<a class="page-link" href={ "/admin/" + entity.Name + "?page=" + strconv.Itoa(pageble.Page+1) + "&size=" + pageSizeStr }>Next</a>
 						</li>
 					}
 				</ul>

@@ -277,11 +277,8 @@ func (t *TechnologyRepo) GetWithTags(id int64) (dto.TechnologyWithTagsDTO, error
 
 // ListWithTags получает список технологий с тегами и пагинацией
 func (t *TechnologyRepo) ListWithTags(req entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO], error) {
-	countQuery := "SELECT COUNT(DISTINCT t.id) FROM technology t"
-
 	var total int
-	err := t.db.QueryRow(countQuery).Scan(&total)
-	if err != nil {
+	if err := t.db.QueryRow("SELECT COUNT(*) FROM technology").Scan(&total); err != nil {
 		return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{}, fmt.Errorf("failed to count technologies: %w", err)
 	}
 
@@ -292,17 +289,45 @@ func (t *TechnologyRepo) ListWithTags(req entityreqdecorator.PagebleRq) (entityr
 		offset = (req.Page - 1) * req.Size
 	}
 
+	idRows, err := t.db.Query("SELECT id FROM technology ORDER BY id LIMIT $1 OFFSET $2", limit, offset)
+	if err != nil {
+		return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{}, fmt.Errorf("failed to query technology ids: %w", err)
+	}
+	defer idRows.Close()
+
+	var ids []int64
+	for idRows.Next() {
+		var id int64
+		if err := idRows.Scan(&id); err != nil {
+			return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{}, fmt.Errorf("failed to scan technology id: %w", err)
+		}
+		ids = append(ids, id)
+	}
+	if err := idRows.Err(); err != nil {
+		return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{}, fmt.Errorf("technology ids rows error: %w", err)
+	}
+
+	if len(ids) == 0 {
+		return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{
+			Total:   total,
+			Content: []dto.TechnologyWithTagsDTO{},
+			Page:    req.Page,
+			Size:    req.Size,
+			Sort:    req.Sort,
+		}, nil
+	}
+
 	selectQuery := `
 		SELECT t.id, t.title, t.description, t.logo_url,
 		       tg.id, tg.name, tg.hex_color
 		FROM technology t
 		LEFT JOIN technologies_tag tt ON tt.technology_id = t.id
 		LEFT JOIN tag tg ON tg.id = tt.tag_id
+		WHERE t.id = ANY($1)
 		ORDER BY t.id
-		LIMIT $1 OFFSET $2
 	`
 
-	rows, err := t.db.Query(selectQuery, limit, offset)
+	rows, err := t.db.Query(selectQuery, pq.Array(ids))
 	if err != nil {
 		return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{}, fmt.Errorf("failed to query technologies with tags: %w", err)
 	}
