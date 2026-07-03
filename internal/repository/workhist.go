@@ -6,10 +6,13 @@ import (
 	"time"
 
 	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
+	"github.com/Maxim-Ba/cv-backend/internal/models/mapper"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	"github.com/Maxim-Ba/cv-backend/pkg/apierrors"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
@@ -90,8 +93,8 @@ func (w *WorkHistoryRepo) Get(id int64) (models.WorkHistory, error) {
 		&workHistory.LogoUrl,
 		&workHistory.PeriodStart,
 		&workHistory.PeriodEnd,
-		pq.Array(&workHistory.WhatIDid),
-		pq.Array(&workHistory.Projects),
+		&workHistory.WhatIDid,
+		&workHistory.Projects,
 		&workHistory.JobTitle,
 	)
 
@@ -140,8 +143,8 @@ func (w *WorkHistoryRepo) List(req entityreqdecorator.PagebleRq) (entityreqdecor
 			&workHistory.LogoUrl,
 			&workHistory.PeriodStart,
 			&workHistory.PeriodEnd,
-			pq.Array(&workHistory.WhatIDid),
-			pq.Array(&workHistory.Projects),
+			&workHistory.WhatIDid,
+			&workHistory.Projects,
 			&workHistory.JobTitle,
 		)
 		if err != nil {
@@ -179,8 +182,8 @@ func (w *WorkHistoryRepo) Create(workHistory models.WorkHistory) (models.WorkHis
 		workHistory.LogoUrl,
 		workHistory.PeriodStart,
 		workHistory.PeriodEnd,
-		pq.Array(workHistory.WhatIDid),
-		pq.Array(workHistory.Projects),
+		workHistory.WhatIDid,
+		workHistory.Projects,
 		workHistory.JobTitle,
 	).Scan(
 		&created.ID,
@@ -189,8 +192,8 @@ func (w *WorkHistoryRepo) Create(workHistory models.WorkHistory) (models.WorkHis
 		&created.LogoUrl,
 		&created.PeriodStart,
 		&created.PeriodEnd,
-		pq.Array(&created.WhatIDid),
-		pq.Array(&created.Projects),
+		&created.WhatIDid,
+		&created.Projects,
 		&created.JobTitle,
 	)
 
@@ -220,8 +223,8 @@ func (w *WorkHistoryRepo) Update(workHistory models.WorkHistory) (models.WorkHis
 		workHistory.LogoUrl,
 		workHistory.PeriodStart,
 		workHistory.PeriodEnd,
-		pq.Array(workHistory.WhatIDid),
-		pq.Array(workHistory.Projects),
+		workHistory.WhatIDid,
+		workHistory.Projects,
 		workHistory.JobTitle,
 	).Scan(
 		&updated.ID,
@@ -230,8 +233,8 @@ func (w *WorkHistoryRepo) Update(workHistory models.WorkHistory) (models.WorkHis
 		&updated.LogoUrl,
 		&updated.PeriodStart,
 		&updated.PeriodEnd,
-		pq.Array(&updated.WhatIDid),
-		pq.Array(&updated.Projects),
+		&updated.WhatIDid,
+		&updated.Projects,
 		&updated.JobTitle,
 	)
 
@@ -268,7 +271,7 @@ func nullTimeToString(t sql.NullTime) *string {
 }
 
 // GetWithTechnologies получает историю работы по ID вместе с технологиями и их тегами
-func (w *WorkHistoryRepo) GetWithTechnologies(id int64) (dto.WorkHistoryWithTechnologiesDTO, error) {
+func (w *WorkHistoryRepo) GetWithTechnologies(id int64, locale i18n.Locale) (dto.WorkHistoryWithTechnologiesDTO, error) {
 	query := `
 		SELECT wh.id, wh.name, wh.about, wh.logo_url,
 		       wh.period_start, wh.period_end,
@@ -291,76 +294,76 @@ func (w *WorkHistoryRepo) GetWithTechnologies(id int64) (dto.WorkHistoryWithTech
 	defer rows.Close()
 
 	var result *dto.WorkHistoryWithTechnologiesDTO
-	techMap := make(map[int64]*dto.TechnologyWithTagsDTO)
 
 	for rows.Next() {
 		var (
 			whID        int64
-			name        string
-			about       string
+			name        i18n.LocalizedText
+			about       i18n.LocalizedText
 			logoUrl     sql.NullString
 			periodStart sql.NullTime
 			periodEnd   sql.NullTime
-			whatIDid    []string
-			projects    []string
-			jobTitle    sql.NullString
+			whatIDid    i18n.LocalizedStringList
+			projects    i18n.LocalizedStringList
+			jobTitle    i18n.NullableLocalizedText
 			techID      sql.NullInt64
 			techTitle   sql.NullString
-			techDesc    sql.NullString
+			techDesc    i18n.NullableLocalizedText
 			techLogo    sql.NullString
 			tagID       sql.NullInt64
-			tagName     sql.NullString
+			tagName     i18n.LocalizedText
 			tagHexColor sql.NullString
 		)
 		if err := rows.Scan(
 			&whID, &name, &about, &logoUrl,
 			&periodStart, &periodEnd,
-			pq.Array(&whatIDid), pq.Array(&projects), &jobTitle,
+			&whatIDid, &projects, &jobTitle,
 			&techID, &techTitle, &techDesc, &techLogo,
 			&tagID, &tagName, &tagHexColor,
 		); err != nil {
 			return dto.WorkHistoryWithTechnologiesDTO{}, fmt.Errorf("failed to scan work history row: %w", err)
 		}
 		if result == nil {
+			whModel := models.WorkHistory{
+				ID:       whID,
+				Name:     name,
+				About:    about,
+				WhatIDid: whatIDid,
+				Projects: projects,
+				JobTitle: jobTitle,
+			}
+			if logoUrl.Valid {
+				whModel.LogoUrl = pgtype.Text{String: logoUrl.String, Valid: true}
+			}
+			if periodStart.Valid {
+				whModel.PeriodStart = pgtype.Date{Time: periodStart.Time, Valid: true}
+			}
+			if periodEnd.Valid {
+				whModel.PeriodEnd = pgtype.Date{Time: periodEnd.Time, Valid: true}
+			}
 			result = &dto.WorkHistoryWithTechnologiesDTO{
-				WorkHistoryDTO: dto.WorkHistoryDTO{
-					ID:          whID,
-					Name:        name,
-					JobTitle:    jobTitle.String,
-					About:       about,
-					LogoUrl:     logoUrl.String,
-					PeriodStart: nullTimeToString(periodStart),
-					PeriodEnd:   nullTimeToString(periodEnd),
-					WhatIDid:    whatIDid,
-					Projects:    projects,
-				},
-				Technologies: []dto.TechnologyWithTagsDTO{},
+				WorkHistoryDTO: mapper.WorkHistoryToDTO(whModel, locale),
+				Technologies:   []dto.TechnologyWithTagsDTO{},
 			}
 		}
 		if techID.Valid {
-			if _, exists := techMap[techID.Int64]; !exists {
-				tech := dto.TechnologyWithTagsDTO{
-					TechnologyDTO: dto.TechnologyDTO{
-						ID:    techID.Int64,
-						Title: techTitle.String,
-					},
-					Tags: []dto.TagDTO{},
-				}
-				if techDesc.Valid {
-					tech.Description = &techDesc.String
-				}
+			if !containsTechID(result.Technologies, techID.Int64) {
+				logo := pgtype.Text{}
 				if techLogo.Valid {
-					tech.LogoUrl = &techLogo.String
+					logo = pgtype.Text{String: techLogo.String, Valid: true}
 				}
-				techMap[techID.Int64] = &tech
-				result.Technologies = append(result.Technologies, tech)
+				techDTO := dto.TechnologyWithTagsDTO{
+					TechnologyDTO: mapper.TechnologyToDTO(techID.Int64, techTitle.String, techDesc, logo, locale),
+					Tags:          []dto.TagDTO{},
+				}
+				result.Technologies = append(result.Technologies, techDTO)
 			}
 			if tagID.Valid {
 				for i := range result.Technologies {
 					if result.Technologies[i].ID == techID.Int64 {
 						result.Technologies[i].Tags = append(result.Technologies[i].Tags, dto.TagDTO{
 							ID:       tagID.Int64,
-							Name:     tagName.String,
+							Name:     tagName.Resolve(locale),
 							HexColor: tagHexColor.String,
 						})
 						break
@@ -379,7 +382,7 @@ func (w *WorkHistoryRepo) GetWithTechnologies(id int64) (dto.WorkHistoryWithTech
 }
 
 // ListWithTechnologies получает список истории работы с технологиями и их тегами
-func (w *WorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO], error) {
+func (w *WorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.PagebleRq, locale i18n.Locale) (entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO], error) {
 	var total int
 	if err := w.db.QueryRow("SELECT COUNT(*) FROM work_history").Scan(&total); err != nil {
 		return entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO]{}, fmt.Errorf("failed to count work histories: %w", err)
@@ -449,26 +452,26 @@ func (w *WorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.PagebleRq)
 	for rows.Next() {
 		var (
 			whID        int64
-			name        string
-			about       string
+			name        i18n.LocalizedText
+			about       i18n.LocalizedText
 			logoUrl     sql.NullString
 			periodStart sql.NullTime
 			periodEnd   sql.NullTime
-			whatIDid    []string
-			projects    []string
-			jobTitle    sql.NullString
+			whatIDid    i18n.LocalizedStringList
+			projects    i18n.LocalizedStringList
+			jobTitle    i18n.NullableLocalizedText
 			techID      sql.NullInt64
 			techTitle   sql.NullString
-			techDesc    sql.NullString
+			techDesc    i18n.NullableLocalizedText
 			techLogo    sql.NullString
 			tagID       sql.NullInt64
-			tagName     sql.NullString
+			tagName     i18n.LocalizedText
 			tagHexColor sql.NullString
 		)
 		if err := rows.Scan(
 			&whID, &name, &about, &logoUrl,
 			&periodStart, &periodEnd,
-			pq.Array(&whatIDid), pq.Array(&projects), &jobTitle,
+			&whatIDid, &projects, &jobTitle,
 			&techID, &techTitle, &techDesc, &techLogo,
 			&tagID, &tagName, &tagHexColor,
 		); err != nil {
@@ -476,37 +479,39 @@ func (w *WorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.PagebleRq)
 		}
 
 		if _, exists := whMap[whID]; !exists {
+			whModel := models.WorkHistory{
+				ID:       whID,
+				Name:     name,
+				About:    about,
+				WhatIDid: whatIDid,
+				Projects: projects,
+				JobTitle: jobTitle,
+			}
+			if logoUrl.Valid {
+				whModel.LogoUrl = pgtype.Text{String: logoUrl.String, Valid: true}
+			}
+			if periodStart.Valid {
+				whModel.PeriodStart = pgtype.Date{Time: periodStart.Time, Valid: true}
+			}
+			if periodEnd.Valid {
+				whModel.PeriodEnd = pgtype.Date{Time: periodEnd.Time, Valid: true}
+			}
 			whMap[whID] = &dto.WorkHistoryWithTechnologiesDTO{
-				WorkHistoryDTO: dto.WorkHistoryDTO{
-					ID:          whID,
-					Name:        name,
-					JobTitle:    jobTitle.String,
-					About:       about,
-					LogoUrl:     logoUrl.String,
-					PeriodStart: nullTimeToString(periodStart),
-					PeriodEnd:   nullTimeToString(periodEnd),
-					WhatIDid:    whatIDid,
-					Projects:    projects,
-				},
-				Technologies: []dto.TechnologyWithTagsDTO{},
+				WorkHistoryDTO: mapper.WorkHistoryToDTO(whModel, locale),
+				Technologies:   []dto.TechnologyWithTagsDTO{},
 			}
 		}
 
 		if techID.Valid {
 			key := techKey{whID: whID, techID: techID.Int64}
 			if _, exists := techTagMap[key]; !exists {
-				tech := dto.TechnologyWithTagsDTO{
-					TechnologyDTO: dto.TechnologyDTO{
-						ID:    techID.Int64,
-						Title: techTitle.String,
-					},
-					Tags: []dto.TagDTO{},
-				}
-				if techDesc.Valid {
-					tech.Description = &techDesc.String
-				}
+				logo := pgtype.Text{}
 				if techLogo.Valid {
-					tech.LogoUrl = &techLogo.String
+					logo = pgtype.Text{String: techLogo.String, Valid: true}
+				}
+				tech := dto.TechnologyWithTagsDTO{
+					TechnologyDTO: mapper.TechnologyToDTO(techID.Int64, techTitle.String, techDesc, logo, locale),
+					Tags:          []dto.TagDTO{},
 				}
 				whMap[whID].Technologies = append(whMap[whID].Technologies, tech)
 				techTagMap[key] = len(whMap[whID].Technologies) - 1
@@ -516,7 +521,7 @@ func (w *WorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.PagebleRq)
 				idx := techTagMap[key]
 				whMap[whID].Technologies[idx].Tags = append(whMap[whID].Technologies[idx].Tags, dto.TagDTO{
 					ID:       tagID.Int64,
-					Name:     tagName.String,
+					Name:     tagName.Resolve(locale),
 					HexColor: tagHexColor.String,
 				})
 			}
@@ -569,4 +574,13 @@ func (w *WorkHistoryRepo) SetTechnologies(workHistoryID int64, technologyIDs []i
 	}
 
 	return nil
+}
+
+func containsTechID(technologies []dto.TechnologyWithTagsDTO, id int64) bool {
+	for _, tech := range technologies {
+		if tech.ID == id {
+			return true
+		}
+	}
+	return false
 }

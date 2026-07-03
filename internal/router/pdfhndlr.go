@@ -7,6 +7,7 @@ import (
 
 	"github.com/Maxim-Ba/cv-backend/internal/services"
 	"github.com/Maxim-Ba/cv-backend/pkg/apierrors"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 )
 
 // PDFHandler хендлер для генерации и скачивания CV в PDF
@@ -28,7 +29,7 @@ func newPDFHandler(svc *services.PDFService) *PDFHandler {
 // @Failure      500  {object}  apierrors.APIError
 // @Router       /download-cv [get]
 func (h *PDFHandler) DownloadCV(w http.ResponseWriter, r *http.Request) {
-	data, err := h.svc.GenerateCV()
+	data, err := h.svc.GenerateCV(i18n.ResolveLocale(r))
 	if err != nil {
 		slog.Error("failed to generate PDF", "error", err)
 		apierrors.WriteError(w, http.StatusInternalServerError, "Не удалось сгенерировать PDF")

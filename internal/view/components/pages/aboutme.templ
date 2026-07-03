@@ -1,33 +1,24 @@
 package pages
 
 import (
-	"strings"
-
-	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	"github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	"github.com/Maxim-Ba/cv-backend/internal/view/components/components"
 	"github.com/Maxim-Ba/cv-backend/internal/view/components/layout"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 )
 
-templ AboutMePage(user string, aboutMe dto.AboutMeDTO, allTech []models.Technology, selectedTechnologyIDs map[int64]bool, csrfToken string) {
-	@layout.Base("О себе", aboutMePage(aboutMe, allTech, selectedTechnologyIDs, csrfToken), user)
+templ AboutMePage(user string, profileAbout i18n.LocalizedText, profileNote i18n.LocalizedText, profileHobbies i18n.LocalizedText, allTech []models.Technology, selectedTechnologyIDs map[int64]bool, csrfToken string) {
+	@layout.Base("О себе", aboutMePage(profileAbout, profileNote, profileHobbies, allTech, selectedTechnologyIDs, csrfToken), user)
 }
 
-templ aboutMePage(aboutMe dto.AboutMeDTO, allTech []models.Technology, selectedTechnologyIDs map[int64]bool, csrfToken string) {
+templ aboutMePage(profileAbout, profileNote, profileHobbies i18n.LocalizedText, allTech []models.Technology, selectedTechnologyIDs map[int64]bool, csrfToken string) {
 	<h2 class="mb-4">Секция «О себе»</h2>
 	@components.InlineEntityForm(components.AboutMeFormData(
-		strings.Join(aboutMe.BioParagraphs, "\n\n"),
-		stringPtrValue(aboutMe.Note),
-		stringPtrValue(aboutMe.Hobbies),
+		profileAbout,
+		profileNote,
+		profileHobbies,
 		allTech,
 		selectedTechnologyIDs,
 		csrfToken,
 	))
-}
-
-func stringPtrValue(value *string) string {
-	if value == nil {
-		return ""
-	}
-	return *value
 }

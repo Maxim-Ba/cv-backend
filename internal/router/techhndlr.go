@@ -12,6 +12,7 @@ import (
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	"github.com/Maxim-Ba/cv-backend/internal/services"
 	"github.com/Maxim-Ba/cv-backend/pkg/apierrors"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
@@ -46,7 +47,7 @@ func (th *TechHandler) TechGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	technology, err := th.service.GetWithTags(techID)
+	technology, err := th.service.GetWithTags(techID, i18n.FromContext(r.Context()))
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			apierrors.WriteError(w, http.StatusNotFound, "technology not found")
@@ -75,7 +76,7 @@ func (th *TechHandler) TechGet(w http.ResponseWriter, r *http.Request) {
 func (th *TechHandler) TechList(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	pagebleRq := entityreqdecorator.ParseQueryParams(queryParams)
-	list, err := th.service.ListWithTags(pagebleRq)
+	list, err := th.service.ListWithTags(pagebleRq, i18n.FromContext(r.Context()))
 	if err != nil {
 		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -112,7 +113,7 @@ func (th *TechHandler) TechCreate(w http.ResponseWriter, r *http.Request) {
 
 	technology := models.Technology{
 		Title:       reqData.Title,
-		Description: pgtype.Text{String: reqData.Description, Valid: reqData.Description != ""},
+		Description: i18n.NullableFromLegacy(optionalStringPtr(reqData.Description)),
 		LogoUrl:     pgtype.Text{String: reqData.LogoUrl, Valid: reqData.LogoUrl != ""},
 	}
 
@@ -214,7 +215,7 @@ func (th *TechHandler) TechUpdate(w http.ResponseWriter, r *http.Request) {
 	technology := models.Technology{
 		ID:          reqData.ID,
 		Title:       reqData.Title,
-		Description: pgtype.Text{String: reqData.Description, Valid: reqData.Description != ""},
+		Description: i18n.NullableFromLegacy(optionalStringPtr(reqData.Description)),
 		LogoUrl:     pgtype.Text{String: reqData.LogoUrl, Valid: reqData.LogoUrl != ""},
 	}
 

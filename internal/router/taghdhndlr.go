@@ -7,10 +7,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	_ "github.com/Maxim-Ba/cv-backend/internal/models/dto"
+	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
+	"github.com/Maxim-Ba/cv-backend/internal/models/mapper"
 	"github.com/Maxim-Ba/cv-backend/internal/services"
 	"github.com/Maxim-Ba/cv-backend/pkg/apierrors"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
@@ -54,7 +56,7 @@ func (th *TagHandler) TagGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(tag); err != nil {
+	if err := json.NewEncoder(w).Encode(mapper.TagToDTO(tag, i18n.FromContext(r.Context()))); err != nil {
 		apierrors.WriteError(w, http.StatusInternalServerError, "failed to encode response")
 	}
 }
@@ -76,8 +78,18 @@ func (th *TagHandler) TagList(w http.ResponseWriter, r *http.Request) {
 		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	locale := i18n.FromContext(r.Context())
+	content := make([]dto.TagDTO, 0, len(list.Content))
+	for _, tag := range list.Content {
+		content = append(content, mapper.TagToDTO(tag, locale))
+	}
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(list); err != nil {
+	if err := json.NewEncoder(w).Encode(dto.TagListResponse{
+		Total:   list.Total,
+		Content: content,
+		Page:    list.Page,
+		Size:    list.Size,
+	}); err != nil {
 		apierrors.WriteError(w, http.StatusInternalServerError, "failed to encode response")
 	}
 }
@@ -105,7 +117,7 @@ func (th *TagHandler) TagCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tag := models.Tag{
-		Name:     reqData.Name,
+		Name:     i18n.FromLegacyText(reqData.Name),
 		HexColor: reqData.HexColor,
 	}
 
@@ -200,7 +212,7 @@ func (th *TagHandler) TagUpdate(w http.ResponseWriter, r *http.Request) {
 
 	tag := models.Tag{
 		ID:       reqData.ID,
-		Name:     reqData.Name,
+		Name:     i18n.FromLegacyText(reqData.Name),
 		HexColor: reqData.HexColor,
 	}
 

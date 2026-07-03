@@ -4,11 +4,14 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/lib/pq"
 
 	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
+	"github.com/Maxim-Ba/cv-backend/internal/models/mapper"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	"github.com/Maxim-Ba/cv-backend/pkg/apierrors"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
@@ -206,25 +209,15 @@ func (t *TechnologyRepo) isValidField(field string) bool {
 }
 
 // technologyRowToDTO конвертирует поля строки запроса в TechnologyDTO
-func technologyRowToDTO(id int64, title string, description sql.NullString, logoUrl sql.NullString) dto.TechnologyWithTagsDTO {
-	tech := dto.TechnologyWithTagsDTO{
-		TechnologyDTO: dto.TechnologyDTO{
-			ID:    id,
-			Title: title,
-		},
-		Tags: []dto.TagDTO{},
+func technologyRowToDTO(id int64, title string, description i18n.NullableLocalizedText, logoUrl pgtype.Text, locale i18n.Locale) dto.TechnologyWithTagsDTO {
+	return dto.TechnologyWithTagsDTO{
+		TechnologyDTO: mapper.TechnologyToDTO(id, title, description, logoUrl, locale),
+		Tags:          []dto.TagDTO{},
 	}
-	if description.Valid {
-		tech.Description = &description.String
-	}
-	if logoUrl.Valid {
-		tech.LogoUrl = &logoUrl.String
-	}
-	return tech
 }
 
 // GetWithTags получает технологию по ID вместе с её тегами
-func (t *TechnologyRepo) GetWithTags(id int64) (dto.TechnologyWithTagsDTO, error) {
+func (t *TechnologyRepo) GetWithTags(id int64, locale i18n.Locale) (dto.TechnologyWithTagsDTO, error) {
 	query := `
 		SELECT t.id, t.title, t.description, t.logo_url,
 		       tg.id, tg.name, tg.hex_color
@@ -245,23 +238,23 @@ func (t *TechnologyRepo) GetWithTags(id int64) (dto.TechnologyWithTagsDTO, error
 		var (
 			techID      int64
 			title       string
-			description sql.NullString
-			logoUrl     sql.NullString
+			description i18n.NullableLocalizedText
+			logoUrl     pgtype.Text
 			tagID       sql.NullInt64
-			tagName     sql.NullString
+			tagName     i18n.LocalizedText
 			tagHexColor sql.NullString
 		)
 		if err := rows.Scan(&techID, &title, &description, &logoUrl, &tagID, &tagName, &tagHexColor); err != nil {
 			return dto.TechnologyWithTagsDTO{}, fmt.Errorf("failed to scan technology with tags: %w", err)
 		}
 		if result == nil {
-			t := technologyRowToDTO(techID, title, description, logoUrl)
-			result = &t
+			tech := technologyRowToDTO(techID, title, description, logoUrl, locale)
+			result = &tech
 		}
 		if tagID.Valid {
 			result.Tags = append(result.Tags, dto.TagDTO{
 				ID:       tagID.Int64,
-				Name:     tagName.String,
+				Name:     tagName.Resolve(locale),
 				HexColor: tagHexColor.String,
 			})
 		}
@@ -276,7 +269,7 @@ func (t *TechnologyRepo) GetWithTags(id int64) (dto.TechnologyWithTagsDTO, error
 }
 
 // ListWithTags получает список технологий с тегами и пагинацией
-func (t *TechnologyRepo) ListWithTags(req entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO], error) {
+func (t *TechnologyRepo) ListWithTags(req entityreqdecorator.PagebleRq, locale i18n.Locale) (entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO], error) {
 	var total int
 	if err := t.db.QueryRow("SELECT COUNT(*) FROM technology").Scan(&total); err != nil {
 		return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{}, fmt.Errorf("failed to count technologies: %w", err)
@@ -340,24 +333,24 @@ func (t *TechnologyRepo) ListWithTags(req entityreqdecorator.PagebleRq) (entityr
 		var (
 			techID      int64
 			title       string
-			description sql.NullString
-			logoUrl     sql.NullString
+			description i18n.NullableLocalizedText
+			logoUrl     pgtype.Text
 			tagID       sql.NullInt64
-			tagName     sql.NullString
+			tagName     i18n.LocalizedText
 			tagHexColor sql.NullString
 		)
 		if err := rows.Scan(&techID, &title, &description, &logoUrl, &tagID, &tagName, &tagHexColor); err != nil {
 			return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{}, fmt.Errorf("failed to scan technology row: %w", err)
 		}
 		if _, exists := techMap[techID]; !exists {
-			tech := technologyRowToDTO(techID, title, description, logoUrl)
+			tech := technologyRowToDTO(techID, title, description, logoUrl, locale)
 			techMap[techID] = &tech
 			order = append(order, techID)
 		}
 		if tagID.Valid {
 			techMap[techID].Tags = append(techMap[techID].Tags, dto.TagDTO{
 				ID:       tagID.Int64,
-				Name:     tagName.String,
+				Name:     tagName.Resolve(locale),
 				HexColor: tagHexColor.String,
 			})
 		}

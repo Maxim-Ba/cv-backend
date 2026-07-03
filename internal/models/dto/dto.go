@@ -94,3 +94,11 @@ type AboutMeDTO struct {
 	Note          *string                 `json:"note"`
 	Hobbies       *string                 `json:"hobbies"`
 }
+
+// HeroDTO — данные hero-секции для JSON-ответа
+type HeroDTO struct {
+	Greeting string `json:"greeting"`
+	FullName string `json:"fullName"`
+	Title    string `json:"title"`
+	Pitch    string `json:"pitch"`
+}

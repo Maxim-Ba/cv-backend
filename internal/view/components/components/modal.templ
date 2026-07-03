@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 )
 
 type EntityFormData struct {
@@ -20,6 +21,8 @@ type FormField struct {
 	Label       string
 	Type        string
 	Value       string
+	ValueRU     string
+	ValueEN     string
 	Placeholder string
 	Required    bool
 	IsTextArea  bool
@@ -57,68 +60,7 @@ templ ModalForm(data EntityFormData) {
 							<input type="hidden" name="id" value={ strconv.FormatInt(data.EntityID, 10) }/>
 						}
 						for _, field := range data.Fields {
-							<div class="mb-3">
-								<label for={ "field-" + field.Name } class="form-label">{ field.Label }</label>
-								if field.IsTextArea {
-									<textarea
-										class="form-control"
-										id={ "field-" + field.Name }
-										name={ field.Name }
-										rows="3"
-										placeholder={ field.Placeholder }
-										required?={ field.Required }
-									>{ field.Value }</textarea>
-								} else if field.Type == "checkbox-group" {
-									<div class="d-flex flex-wrap gap-2">
-										for _, opt := range field.Options {
-											<div class="form-check">
-												<input
-													class="form-check-input"
-													type="checkbox"
-													name={ field.Name }
-													value={ opt.Value }
-													id={ "field-" + field.Name + "-" + opt.Value }
-													checked?={ opt.Checked }
-												/>
-												<label class="form-check-label" for={ "field-" + field.Name + "-" + opt.Value }>
-													<span class="badge" style={ "background-color: " + opt.Color }>{ opt.Label }</span>
-												</label>
-											</div>
-										}
-									</div>
-								} else if field.Type == "color" {
-									<div class="input-group">
-										<input
-											type="color"
-											class="form-control form-control-color"
-											id={ "field-" + field.Name + "-picker" }
-											value={ field.Value }
-											oninput="adminSyncColorToText(this)"
-											title="Выберите цвет"
-										/>
-										<input
-											type="text"
-											class="form-control font-monospace"
-											id={ "field-" + field.Name }
-											name={ field.Name }
-											value={ field.Value }
-											placeholder={ field.Placeholder }
-											required?={ field.Required }
-											oninput="adminSyncTextToPicker(this)"
-										/>
-									</div>
-								} else {
-									<input
-										type={ field.Type }
-										class="form-control"
-										id={ "field-" + field.Name }
-										name={ field.Name }
-										value={ field.Value }
-										placeholder={ field.Placeholder }
-										required?={ field.Required }
-									/>
-								}
-							</div>
+							@renderFormField(field)
 						}
 						<div class="modal-footer">
 							<a href="?" class="btn btn-secondary">Отмена</a>
@@ -145,47 +87,7 @@ templ InlineEntityForm(data EntityFormData) {
 			<input type="hidden" name="id" value={ strconv.FormatInt(data.EntityID, 10) }/>
 		}
 		for _, field := range data.Fields {
-			<div class="mb-3">
-				<label for={ "field-" + field.Name } class="form-label">{ field.Label }</label>
-				if field.IsTextArea {
-					<textarea
-						class="form-control"
-						id={ "field-" + field.Name }
-						name={ field.Name }
-						rows="5"
-						placeholder={ field.Placeholder }
-						required?={ field.Required }
-					>{ field.Value }</textarea>
-				} else if field.Type == "checkbox-group" {
-					<div class="d-flex flex-wrap gap-2">
-						for _, opt := range field.Options {
-							<div class="form-check">
-								<input
-									class="form-check-input"
-									type="checkbox"
-									name={ field.Name }
-									value={ opt.Value }
-									id={ "field-" + field.Name + "-" + opt.Value }
-									checked?={ opt.Checked }
-								/>
-								<label class="form-check-label" for={ "field-" + field.Name + "-" + opt.Value }>
-									<span class="badge" style={ "background-color: " + opt.Color }>{ opt.Label }</span>
-								</label>
-							</div>
-						}
-					</div>
-				} else {
-					<input
-						type={ field.Type }
-						class="form-control"
-						id={ "field-" + field.Name }
-						name={ field.Name }
-						value={ field.Value }
-						placeholder={ field.Placeholder }
-						required?={ field.Required }
-					/>
-				}
-			</div>
+			@renderFormField(field)
 		}
 		<div class="d-flex justify-content-end">
 			<button type="submit" class="btn btn-primary">Сохранить</button>
@@ -203,7 +105,7 @@ func TechnologyFormData(tech models.Technology, allTags []models.Tag, selectedTa
 	for _, tag := range allTags {
 		tagOptions = append(tagOptions, FormFieldOption{
 			Value:   strconv.FormatInt(tag.ID, 10),
-			Label:   tag.Name,
+			Label:   tag.Name.Get(i18n.LocaleRU),
 			Checked: selectedTagIDs[tag.ID],
 			Color:   tag.HexColor,
 		})
@@ -221,25 +123,16 @@ func TechnologyFormData(tech models.Technology, allTags []models.Tag, selectedTa
 				Label:       "Название",
 				Type:        "text",
 				Value:       tech.Title,
-				Placeholder: "Введите название технологии",
+				Placeholder: "Go, Angular",
 				Required:    true,
 			},
-			{
-				Name:        "description",
-				Label:       "Описание",
-				Type:        "text",
-				Value:       tech.Description.String,
-				Placeholder: "Введите описание",
-				IsTextArea:  true,
-				Required:    false,
-			},
+			nullableLocalizedField("description", "Описание", tech.Description, "Описание технологии", true),
 			{
 				Name:        "logoUrl",
 				Label:       "URL логотипа",
 				Type:        "url",
 				Value:       tech.LogoUrl.String,
 				Placeholder: "https://example.com/logo.png",
-				Required:    false,
 			},
 			{
 				Name:    "tagIds",
@@ -264,14 +157,7 @@ func EducationFormData(edu models.Education, csrfToken string, isEdit bool) Enti
 		EntityID:   edu.ID,
 		CSRFToken:  csrfToken,
 		Fields: []FormField{
-			{
-				Name:        "name",
-				Label:       "Название",
-				Type:        "text",
-				Value:       edu.Name.String,
-				Placeholder: "Введите название учебного заведения",
-				Required:    true,
-			},
+			nullableLocalizedField("name", "Название", edu.Name, "Название учебного заведения", false),
 			{
 				Name:        "year",
 				Label:       "Год окончания",
@@ -280,22 +166,8 @@ func EducationFormData(edu models.Education, csrfToken string, isEdit bool) Enti
 				Placeholder: "2020",
 				Required:    true,
 			},
-			{
-				Name:        "course",
-				Label:       "Направление / курс",
-				Type:        "text",
-				Value:       edu.Course,
-				Placeholder: "Программная инженерия",
-				Required:    true,
-			},
-			{
-				Name:        "organization",
-				Label:       "Организация",
-				Type:        "text",
-				Value:       edu.Organization,
-				Placeholder: "МГТУ им. Баумана",
-				Required:    true,
-			},
+			localizedTextField("course", "Направление / курс", edu.Course, "Программная инженерия", true, false),
+			localizedTextField("organization", "Организация", edu.Organization, "МГТУ им. Баумана", true, false),
 		},
 	}
 }
@@ -315,22 +187,6 @@ func WorkHistoryFormData(wh models.WorkHistory, allTechnologies []models.Technol
 		periodEnd = wh.PeriodEnd.Time.Format("2006-01-02")
 	}
 
-	whatIDid := ""
-	for i, item := range wh.WhatIDid {
-		if i > 0 {
-			whatIDid += "\n"
-		}
-		whatIDid += item
-	}
-
-	projects := ""
-	for i, item := range wh.Projects {
-		if i > 0 {
-			projects += "\n"
-		}
-		projects += item
-	}
-
 	technologyOptions := make([]FormFieldOption, 0, len(allTechnologies))
 	for _, tech := range allTechnologies {
 		technologyOptions = append(technologyOptions, FormFieldOption{
@@ -348,73 +204,31 @@ func WorkHistoryFormData(wh models.WorkHistory, allTechnologies []models.Technol
 		EntityID:   wh.ID,
 		CSRFToken:  csrfToken,
 		Fields: []FormField{
-			{
-				Name:        "name",
-				Label:       "Название компании",
-				Type:        "text",
-				Value:       wh.Name,
-				Placeholder: "ООО Рога и Копыта",
-				Required:    true,
-			},
-			{
-				Name:        "jobTitle",
-				Label:       "Должность",
-				Type:        "text",
-				Value:       wh.JobTitle.String,
-				Placeholder: "Senior Backend Developer",
-				Required:    false,
-			},
-			{
-				Name:        "about",
-				Label:       "О компании",
-				Type:        "text",
-				Value:       wh.About,
-				Placeholder: "Краткое описание компании",
-				IsTextArea:  true,
-				Required:    true,
-			},
+			localizedTextField("name", "Название компании", wh.Name, "ООО Рога и Копыта", true, false),
+			nullableLocalizedField("jobTitle", "Должность", wh.JobTitle, "Senior Backend Developer", false),
+			localizedTextField("about", "О компании", wh.About, "Краткое описание компании", true, true),
 			{
 				Name:        "logoUrl",
 				Label:       "URL логотипа",
 				Type:        "url",
 				Value:       wh.LogoUrl.String,
 				Placeholder: "https://example.com/logo.png",
-				Required:    false,
 			},
 			{
-				Name:        "periodStart",
-				Label:       "Начало работы",
-				Type:        "date",
-				Value:       periodStart,
-				Placeholder: "",
-				Required:    true,
+				Name:     "periodStart",
+				Label:    "Начало работы",
+				Type:     "date",
+				Value:    periodStart,
+				Required: true,
 			},
 			{
-				Name:        "periodEnd",
-				Label:       "Конец работы (пусто = по наст. время)",
-				Type:        "date",
-				Value:       periodEnd,
-				Placeholder: "",
-				Required:    false,
+				Name:  "periodEnd",
+				Label: "Конец работы (пусто = по наст. время)",
+				Type:  "date",
+				Value: periodEnd,
 			},
-			{
-				Name:        "whatIDid",
-				Label:       "Что делал (каждый пункт с новой строки)",
-				Type:        "text",
-				Value:       whatIDid,
-				Placeholder: "Разрабатывал микросервисы\nПроводил code review",
-				IsTextArea:  true,
-				Required:    false,
-			},
-			{
-				Name:        "projects",
-				Label:       "Проекты (каждый с новой строки)",
-				Type:        "text",
-				Value:       projects,
-				Placeholder: "Проект А\nПроект Б",
-				IsTextArea:  true,
-				Required:    false,
-			},
+			localizedListField("whatIDid", "Что делал (каждый пункт с новой строки)", wh.WhatIDid, "Разрабатывал микросервисы"),
+			localizedListField("projects", "Проекты (каждый с новой строки)", wh.Projects, "Проект А"),
 			{
 				Name:    "technologyIds",
 				Label:   "Технологии",
@@ -425,7 +239,7 @@ func WorkHistoryFormData(wh models.WorkHistory, allTechnologies []models.Technol
 	}
 }
 
-func AboutMeFormData(about, note, hobbies string, allTech []models.Technology, selectedTechnologyIDs map[int64]bool, csrfToken string) EntityFormData {
+func AboutMeFormData(about, note, hobbies i18n.LocalizedText, allTech []models.Technology, selectedTechnologyIDs map[int64]bool, csrfToken string) EntityFormData {
 	technologyOptions := make([]FormFieldOption, 0, len(allTech))
 	for _, tech := range allTech {
 		technologyOptions = append(technologyOptions, FormFieldOption{
@@ -443,39 +257,31 @@ func AboutMeFormData(about, note, hobbies string, allTech []models.Technology, s
 		EntityID:   1,
 		CSRFToken:  csrfToken,
 		Fields: []FormField{
-			{
-				Name:        "about",
-				Label:       "Биография (абзацы через пустую строку)",
-				Type:        "text",
-				Value:       about,
-				Placeholder: "Первый абзац\n\nВторой абзац",
-				IsTextArea:  true,
-				Required:    false,
-			},
+			localizedTextField("about", "Биография (абзацы через пустую строку)", about, "Первый абзац\n\nВторой абзац", false, true),
 			{
 				Name:    "technologyIds",
 				Label:   "Технологии (бейджи)",
 				Type:    "checkbox-group",
 				Options: technologyOptions,
 			},
-			{
-				Name:        "note",
-				Label:       "Заметка",
-				Type:        "text",
-				Value:       note,
-				Placeholder: "Краткая заметка",
-				IsTextArea:  true,
-				Required:    false,
-			},
-			{
-				Name:        "hobbies",
-				Label:       "Хобби",
-				Type:        "text",
-				Value:       hobbies,
-				Placeholder: "Мои хобби: ...",
-				IsTextArea:  true,
-				Required:    false,
-			},
+			localizedTextField("note", "Заметка", note, "Краткая заметка", false, true),
+			localizedTextField("hobbies", "Хобби", hobbies, "Мои хобби: ...", false, true),
+		},
+	}
+}
+
+func HeroFormData(greeting, fullName, title, pitch i18n.LocalizedText, profileID int64, csrfToken string) EntityFormData {
+	return EntityFormData{
+		EntityName: "Hero",
+		ActionURL:  "/admin/hero",
+		Method:     "PUT",
+		EntityID:   profileID,
+		CSRFToken:  csrfToken,
+		Fields: []FormField{
+			localizedTextField("greeting", "Приветствие", greeting, "Здравствуйте!", true, false),
+			localizedTextField("fullName", "Имя", fullName, "Балашов Максим", true, false),
+			localizedTextField("title", "Должность", title, "Full-Stack разработчик", true, false),
+			localizedTextField("pitch", "Краткое описание", pitch, "Эта страница рассказывает...", false, true),
 		},
 	}
 }
@@ -485,7 +291,7 @@ func TagFormData(tag models.Tag, csrfToken string, isEdit bool) EntityFormData {
 	if isEdit {
 		method = "PUT"
 	}
-	
+
 	return EntityFormData{
 		EntityName: "Tag",
 		ActionURL:  "/admin/tag",
@@ -493,14 +299,7 @@ func TagFormData(tag models.Tag, csrfToken string, isEdit bool) EntityFormData {
 		EntityID:   tag.ID,
 		CSRFToken:  csrfToken,
 		Fields: []FormField{
-			{
-				Name:        "name",
-				Label:       "Название",
-				Type:        "text",
-				Value:       tag.Name,
-				Placeholder: "Введите название тега",
-				Required:    true,
-			},
+			localizedTextField("name", "Название", tag.Name, "Frontend", true, false),
 			{
 				Name:        "hexColor",
 				Label:       "Цвет (HEX)",

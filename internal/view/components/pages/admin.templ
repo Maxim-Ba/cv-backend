@@ -10,5 +10,12 @@ templ AdminPage(user string) {
 
 templ content(user string) {
    <h1>Welcome, { user }</h1>
-    
+   <ul class="list-group mt-4">
+     <li class="list-group-item"><a href="/admin/hero">Hero-секция</a></li>
+     <li class="list-group-item"><a href="/admin/about-me">О себе</a></li>
+     <li class="list-group-item"><a href="/admin/history">Опыт работы</a></li>
+     <li class="list-group-item"><a href="/admin/tech">Технологии</a></li>
+     <li class="list-group-item"><a href="/admin/education">Образование</a></li>
+     <li class="list-group-item"><a href="/admin/tag">Теги</a></li>
+   </ul>
 }

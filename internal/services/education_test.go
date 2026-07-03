@@ -4,10 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jackc/pgx/v5/pgtype"
-
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 )
 
 // MockEducationRepo мок-репозиторий для тестирования EducationService
@@ -77,10 +76,10 @@ func TestEducationService_Get(t *testing.T) {
 			id:   1,
 			mockEdu: models.Education{
 				ID:           1,
-				Name:         pgtype.Text{String: "МГУ", Valid: true},
+				Name: newNullableLocalizedText("МГУ"),
 				Year:         2020,
-				Course:       "Computer Science",
-				Organization: "Moscow State University",
+				Course: newLocalizedText("Computer Science"),
+				Organization: newLocalizedText("Moscow State University"),
 			},
 			mockError: nil,
 			wantError: false,
@@ -131,8 +130,8 @@ func TestEducationService_Get(t *testing.T) {
 				if result.ID != tt.mockEdu.ID {
 					t.Errorf("Ожидался ID = %d, получили %d", tt.mockEdu.ID, result.ID)
 				}
-				if result.Course != tt.mockEdu.Course {
-					t.Errorf("Ожидался Course = %s, получили %s", tt.mockEdu.Course, result.Course)
+				if result.Course.Get(i18n.LocaleRU) != tt.mockEdu.Course.Get(i18n.LocaleRU) {
+					t.Errorf("Ожидался Course = %s, получили %s", tt.mockEdu.Course.Get(i18n.LocaleRU), result.Course.Get(i18n.LocaleRU))
 				}
 			}
 		})
@@ -159,17 +158,17 @@ func TestEducationService_List(t *testing.T) {
 				Content: []models.Education{
 					{
 						ID:           1,
-						Name:         pgtype.Text{String: "МГУ", Valid: true},
+						Name: newNullableLocalizedText("МГУ"),
 						Year:         2020,
-						Course:       "Computer Science",
-						Organization: "Moscow State University",
+						Course: newLocalizedText("Computer Science"),
+						Organization: newLocalizedText("Moscow State University"),
 					},
 					{
 						ID:           2,
-						Name:         pgtype.Text{String: "МФТИ", Valid: true},
+						Name: newNullableLocalizedText("МФТИ"),
 						Year:         2019,
-						Course:       "Physics",
-						Organization: "Moscow Institute of Physics and Technology",
+						Course: newLocalizedText("Physics"),
+						Organization: newLocalizedText("Moscow Institute of Physics and Technology"),
 					},
 				},
 				Page: 1,
@@ -235,17 +234,17 @@ func TestEducationService_Create(t *testing.T) {
 		{
 			name: "Успешное создание образования",
 			edu: models.Education{
-				Name:         pgtype.Text{String: "СПбГУ", Valid: true},
+				Name: newNullableLocalizedText("СПбГУ"),
 				Year:         2021,
-				Course:       "Mathematics",
-				Organization: "Saint Petersburg State University",
+				Course: newLocalizedText("Mathematics"),
+				Organization: newLocalizedText("Saint Petersburg State University"),
 			},
 			mockEdu: models.Education{
 				ID:           3,
-				Name:         pgtype.Text{String: "СПбГУ", Valid: true},
+				Name: newNullableLocalizedText("СПбГУ"),
 				Year:         2021,
-				Course:       "Mathematics",
-				Organization: "Saint Petersburg State University",
+				Course: newLocalizedText("Mathematics"),
+				Organization: newLocalizedText("Saint Petersburg State University"),
 			},
 			mockError: nil,
 			wantError: false,
@@ -253,10 +252,10 @@ func TestEducationService_Create(t *testing.T) {
 		{
 			name: "Отсутствует курс",
 			edu: models.Education{
-				Name:         pgtype.Text{String: "СПбГУ", Valid: true},
+				Name: newNullableLocalizedText("СПбГУ"),
 				Year:         2021,
-				Course:       "",
-				Organization: "Saint Petersburg State University",
+				Course: newLocalizedText(""),
+				Organization: newLocalizedText("Saint Petersburg State University"),
 			},
 			wantError: true,
 			errorMsg:  "course and organization are required fields",
@@ -264,10 +263,10 @@ func TestEducationService_Create(t *testing.T) {
 		{
 			name: "Отсутствует организация",
 			edu: models.Education{
-				Name:         pgtype.Text{String: "СПбГУ", Valid: true},
+				Name: newNullableLocalizedText("СПбГУ"),
 				Year:         2021,
-				Course:       "Mathematics",
-				Organization: "",
+				Course: newLocalizedText("Mathematics"),
+				Organization: newLocalizedText(""),
 			},
 			wantError: true,
 			errorMsg:  "course and organization are required fields",
@@ -275,10 +274,10 @@ func TestEducationService_Create(t *testing.T) {
 		{
 			name: "Ошибка репозитория",
 			edu: models.Education{
-				Name:         pgtype.Text{String: "СПбГУ", Valid: true},
+				Name: newNullableLocalizedText("СПбГУ"),
 				Year:         2021,
-				Course:       "Mathematics",
-				Organization: "Saint Petersburg State University",
+				Course: newLocalizedText("Mathematics"),
+				Organization: newLocalizedText("Saint Petersburg State University"),
 			},
 			mockError: errors.New("database constraint violation"),
 			wantError: true,
@@ -335,17 +334,17 @@ func TestEducationService_Update(t *testing.T) {
 			name: "Успешное обновление образования",
 			edu: models.Education{
 				ID:           1,
-				Name:         pgtype.Text{String: "МГУ", Valid: true},
+				Name: newNullableLocalizedText("МГУ"),
 				Year:         2021,
-				Course:       "Computer Science Updated",
-				Organization: "Moscow State University",
+				Course: newLocalizedText("Computer Science Updated"),
+				Organization: newLocalizedText("Moscow State University"),
 			},
 			mockEdu: models.Education{
 				ID:           1,
-				Name:         pgtype.Text{String: "МГУ", Valid: true},
+				Name: newNullableLocalizedText("МГУ"),
 				Year:         2021,
-				Course:       "Computer Science Updated",
-				Organization: "Moscow State University",
+				Course: newLocalizedText("Computer Science Updated"),
+				Organization: newLocalizedText("Moscow State University"),
 			},
 			mockError: nil,
 			wantError: false,
@@ -354,8 +353,8 @@ func TestEducationService_Update(t *testing.T) {
 			name: "Невалидный ID (0)",
 			edu: models.Education{
 				ID:           0,
-				Course:       "Computer Science",
-				Organization: "Some University",
+				Course: newLocalizedText("Computer Science"),
+				Organization: newLocalizedText("Some University"),
 			},
 			wantError: true,
 			errorMsg:  "invalid education ID",
@@ -364,8 +363,8 @@ func TestEducationService_Update(t *testing.T) {
 			name: "Отсутствует курс",
 			edu: models.Education{
 				ID:           1,
-				Course:       "",
-				Organization: "Some University",
+				Course: newLocalizedText(""),
+				Organization: newLocalizedText("Some University"),
 			},
 			wantError: true,
 			errorMsg:  "course and organization are required fields",
@@ -374,8 +373,8 @@ func TestEducationService_Update(t *testing.T) {
 			name: "Ошибка репозитория - образование не найдено",
 			edu: models.Education{
 				ID:           999,
-				Course:       "Computer Science",
-				Organization: "Some University",
+				Course: newLocalizedText("Computer Science"),
+				Organization: newLocalizedText("Some University"),
 			},
 			mockError: errors.New("education not found"),
 			wantError: true,
@@ -410,8 +409,8 @@ func TestEducationService_Update(t *testing.T) {
 				if err != nil {
 					t.Errorf("Не ожидалась ошибка, получили: %v", err)
 				}
-				if result.Course != tt.mockEdu.Course {
-					t.Errorf("Ожидался Course = %s, получили %s", tt.mockEdu.Course, result.Course)
+				if result.Course.Get(i18n.LocaleRU) != tt.mockEdu.Course.Get(i18n.LocaleRU) {
+					t.Errorf("Ожидался Course = %s, получили %s", tt.mockEdu.Course.Get(i18n.LocaleRU), result.Course.Get(i18n.LocaleRU))
 				}
 			}
 		})

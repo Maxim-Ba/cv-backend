@@ -4,11 +4,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jackc/pgx/v5/pgtype"
-
 	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 )
 
 // MockTechRepo мок-репозиторий для тестирования TechService
@@ -63,11 +62,11 @@ func (m *MockTechRepo) DeleteList(ids []int64) ([]int64, error) {
 	return nil, nil
 }
 
-func (m *MockTechRepo) GetWithTags(id int64) (dto.TechnologyWithTagsDTO, error) {
+func (m *MockTechRepo) GetWithTags(id int64, locale i18n.Locale) (dto.TechnologyWithTagsDTO, error) {
 	return dto.TechnologyWithTagsDTO{}, nil
 }
 
-func (m *MockTechRepo) ListWithTags(req entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO], error) {
+func (m *MockTechRepo) ListWithTags(req entityreqdecorator.PagebleRq, locale i18n.Locale) (entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO], error) {
 	return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{}, nil
 }
 
@@ -91,8 +90,8 @@ func TestTechService_Get(t *testing.T) {
 			mockTech: models.Technology{
 				ID:          1,
 				Title:       "Go",
-				Description: pgtype.Text{String: "Programming language", Valid: true},
-				LogoUrl:     pgtype.Text{String: "https://golang.org/logo.png", Valid: true},
+				Description: newNullableLocalizedText("Programming language"),
+				LogoUrl: newPgText("https://golang.org/logo.png"),
 			},
 			mockError: nil,
 			wantError: false,
@@ -172,12 +171,12 @@ func TestTechService_List(t *testing.T) {
 					{
 						ID:          1,
 						Title:       "Go",
-						Description: pgtype.Text{String: "Programming language", Valid: true},
+						Description: newNullableLocalizedText("Programming language"),
 					},
 					{
 						ID:          2,
 						Title:       "PostgreSQL",
-						Description: pgtype.Text{String: "Database", Valid: true},
+						Description: newNullableLocalizedText("Database"),
 					},
 				},
 				Page: 1,
@@ -244,14 +243,14 @@ func TestTechService_Create(t *testing.T) {
 			name: "Успешное создание технологии",
 			tech: models.Technology{
 				Title:       "Docker",
-				Description: pgtype.Text{String: "Containerization platform", Valid: true},
-				LogoUrl:     pgtype.Text{String: "https://docker.com/logo.png", Valid: true},
+				Description: newNullableLocalizedText("Containerization platform"),
+				LogoUrl: newPgText("https://docker.com/logo.png"),
 			},
 			mockTech: models.Technology{
 				ID:          3,
 				Title:       "Docker",
-				Description: pgtype.Text{String: "Containerization platform", Valid: true},
-				LogoUrl:     pgtype.Text{String: "https://docker.com/logo.png", Valid: true},
+				Description: newNullableLocalizedText("Containerization platform"),
+				LogoUrl: newPgText("https://docker.com/logo.png"),
 			},
 			mockError: nil,
 			wantError: false,
@@ -260,7 +259,7 @@ func TestTechService_Create(t *testing.T) {
 			name: "Отсутствует заголовок",
 			tech: models.Technology{
 				Title:       "",
-				Description: pgtype.Text{String: "Some description", Valid: true},
+				Description: newNullableLocalizedText("Some description"),
 			},
 			wantError: true,
 			errorMsg:  "technology title is required",
@@ -326,12 +325,12 @@ func TestTechService_Update(t *testing.T) {
 			tech: models.Technology{
 				ID:          1,
 				Title:       "Go Updated",
-				Description: pgtype.Text{String: "Updated description", Valid: true},
+				Description: newNullableLocalizedText("Updated description"),
 			},
 			mockTech: models.Technology{
 				ID:          1,
 				Title:       "Go Updated",
-				Description: pgtype.Text{String: "Updated description", Valid: true},
+				Description: newNullableLocalizedText("Updated description"),
 			},
 			mockError: nil,
 			wantError: false,

@@ -106,9 +106,9 @@ func educationPage(eduResult entityreqdecorator.PagebleRs[models.Education], edi
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var5 string
-				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(edu.Name.String)
+				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(components.DisplayNullableRU(edu.Name))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/components/pages/education.templ`, Line: 36, Col: 27}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/components/pages/education.templ`, Line: 36, Col: 50}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -132,9 +132,9 @@ func educationPage(eduResult entityreqdecorator.PagebleRs[models.Education], edi
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var7 string
-				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(edu.Course)
+				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(components.DisplayRU(edu.Course))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/components/pages/education.templ`, Line: 38, Col: 22}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/components/pages/education.templ`, Line: 38, Col: 44}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -145,9 +145,9 @@ func educationPage(eduResult entityreqdecorator.PagebleRs[models.Education], edi
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var8 string
-				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(edu.Organization)
+				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(components.DisplayRU(edu.Organization))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/components/pages/education.templ`, Line: 39, Col: 28}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/components/pages/education.templ`, Line: 39, Col: 50}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {

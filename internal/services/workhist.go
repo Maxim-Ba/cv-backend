@@ -5,6 +5,7 @@ import (
 
 	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
@@ -28,8 +29,8 @@ type WorkHistoryReader interface {
 
 // WorkHistoryDTOReader интерфейс для чтения истории работы с вложенными технологиями
 type WorkHistoryDTOReader interface {
-	GetWithTechnologies(id int64) (dto.WorkHistoryWithTechnologiesDTO, error)
-	ListWithTechnologies(entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO], error)
+	GetWithTechnologies(id int64, locale i18n.Locale) (dto.WorkHistoryWithTechnologiesDTO, error)
+	ListWithTechnologies(r entityreqdecorator.PagebleRq, locale i18n.Locale) (entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO], error)
 }
 
 // WorkHistoryTechnologyWriter интерфейс для управления связями с технологиями
@@ -105,7 +106,7 @@ func (s *WorkHistoryService) List(r entityreqdecorator.PagebleRq) (entityreqdeco
 
 // Create создает новую запись истории работы
 func (s *WorkHistoryService) Create(workHistory models.WorkHistory) (models.WorkHistory, error) {
-	if workHistory.Name == "" || workHistory.About == "" {
+	if workHistory.Name.IsEmpty() || workHistory.About.IsEmpty() {
 		return models.WorkHistory{}, fmt.Errorf("name and about are required fields")
 	}
 	res, err := s.repo.Create(workHistory)
@@ -116,11 +117,11 @@ func (s *WorkHistoryService) Create(workHistory models.WorkHistory) (models.Work
 }
 
 // GetWithTechnologies получает историю работы с технологиями по ID
-func (s *WorkHistoryService) GetWithTechnologies(id int64) (dto.WorkHistoryWithTechnologiesDTO, error) {
+func (s *WorkHistoryService) GetWithTechnologies(id int64, locale i18n.Locale) (dto.WorkHistoryWithTechnologiesDTO, error) {
 	if id == 0 {
 		return dto.WorkHistoryWithTechnologiesDTO{}, fmt.Errorf("invalid work history ID: %d", id)
 	}
-	res, err := s.repo.GetWithTechnologies(id)
+	res, err := s.repo.GetWithTechnologies(id, locale)
 	if err != nil {
 		return dto.WorkHistoryWithTechnologiesDTO{}, fmt.Errorf("error getting work history with technologies: %w", err)
 	}
@@ -128,8 +129,8 @@ func (s *WorkHistoryService) GetWithTechnologies(id int64) (dto.WorkHistoryWithT
 }
 
 // ListWithTechnologies получает список истории работы с технологиями
-func (s *WorkHistoryService) ListWithTechnologies(r entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO], error) {
-	res, err := s.repo.ListWithTechnologies(r)
+func (s *WorkHistoryService) ListWithTechnologies(r entityreqdecorator.PagebleRq, locale i18n.Locale) (entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO], error) {
+	res, err := s.repo.ListWithTechnologies(r, locale)
 	if err != nil {
 		return entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO]{}, fmt.Errorf("error in getting list with technologies from WorkHistory repo: %w", err)
 	}
@@ -141,7 +142,7 @@ func (s *WorkHistoryService) Update(workHistory models.WorkHistory) (models.Work
 	if workHistory.ID == 0 {
 		return models.WorkHistory{}, fmt.Errorf("invalid work history ID: %d", workHistory.ID)
 	}
-	if workHistory.Name == "" || workHistory.About == "" {
+	if workHistory.Name.IsEmpty() || workHistory.About.IsEmpty() {
 		return models.WorkHistory{}, fmt.Errorf("name and about are required fields")
 	}
 	res, err := s.repo.Update(workHistory)

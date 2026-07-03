@@ -6,6 +6,7 @@ import (
 
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 )
 
 // MockTagRepo мок-репозиторий для тестирования TagService
@@ -75,7 +76,7 @@ func TestTagService_Get(t *testing.T) {
 			id:   1,
 			mockTag: models.Tag{
 				ID:       1,
-				Name:     "Backend",
+				Name: newLocalizedText("Backend"),
 				HexColor: "#FF5733",
 			},
 			mockError: nil,
@@ -127,8 +128,8 @@ func TestTagService_Get(t *testing.T) {
 				if result.ID != tt.mockTag.ID {
 					t.Errorf("Ожидался ID = %d, получили %d", tt.mockTag.ID, result.ID)
 				}
-				if result.Name != tt.mockTag.Name {
-					t.Errorf("Ожидалось Name = %s, получили %s", tt.mockTag.Name, result.Name)
+				if result.Name.Get(i18n.LocaleRU) != tt.mockTag.Name.Get(i18n.LocaleRU) {
+					t.Errorf("Ожидалось Name = %s, получили %s", tt.mockTag.Name.Get(i18n.LocaleRU), result.Name.Get(i18n.LocaleRU))
 				}
 			}
 		})
@@ -153,8 +154,8 @@ func TestTagService_List(t *testing.T) {
 			mockResult: entityreqdecorator.PagebleRs[models.Tag]{
 				Total: 2,
 				Content: []models.Tag{
-					{ID: 1, Name: "Backend", HexColor: "#FF5733"},
-					{ID: 2, Name: "Frontend", HexColor: "#33FF57"},
+					{ID: 1, Name: newLocalizedText("Backend"), HexColor: "#FF5733"},
+					{ID: 2, Name: newLocalizedText("Frontend"), HexColor: "#33FF57"},
 				},
 				Page: 1,
 				Size: 10,
@@ -219,12 +220,12 @@ func TestTagService_Create(t *testing.T) {
 		{
 			name: "Успешное создание тега",
 			tag: models.Tag{
-				Name:     "DevOps",
+				Name:     newLocalizedText("DevOps"),
 				HexColor: "#00FF00",
 			},
 			mockTag: models.Tag{
 				ID:       3,
-				Name:     "DevOps",
+				Name:     newLocalizedText("DevOps"),
 				HexColor: "#00FF00",
 			},
 			mockError: nil,
@@ -233,7 +234,7 @@ func TestTagService_Create(t *testing.T) {
 		{
 			name: "Отсутствует имя тега",
 			tag: models.Tag{
-				Name:     "",
+				Name:     newLocalizedText(""),
 				HexColor: "#00FF00",
 			},
 			wantError: true,
@@ -242,7 +243,7 @@ func TestTagService_Create(t *testing.T) {
 		{
 			name: "Отсутствует цвет тега",
 			tag: models.Tag{
-				Name:     "DevOps",
+				Name:     newLocalizedText("DevOps"),
 				HexColor: "",
 			},
 			wantError: true,
@@ -251,7 +252,7 @@ func TestTagService_Create(t *testing.T) {
 		{
 			name: "Ошибка репозитория",
 			tag: models.Tag{
-				Name:     "DevOps",
+				Name:     newLocalizedText("DevOps"),
 				HexColor: "#00FF00",
 			},
 			mockError: errors.New("duplicate key error"),
@@ -309,12 +310,12 @@ func TestTagService_Update(t *testing.T) {
 			name: "Успешное обновление тега",
 			tag: models.Tag{
 				ID:       1,
-				Name:     "Backend Updated",
+				Name:     newLocalizedText("Backend Updated"),
 				HexColor: "#FF5733",
 			},
 			mockTag: models.Tag{
 				ID:       1,
-				Name:     "Backend Updated",
+				Name:     newLocalizedText("Backend Updated"),
 				HexColor: "#FF5733",
 			},
 			mockError: nil,
@@ -324,7 +325,7 @@ func TestTagService_Update(t *testing.T) {
 			name: "Невалидный ID (0)",
 			tag: models.Tag{
 				ID:       0,
-				Name:     "Backend",
+				Name: newLocalizedText("Backend"),
 				HexColor: "#FF5733",
 			},
 			wantError: true,
@@ -334,7 +335,7 @@ func TestTagService_Update(t *testing.T) {
 			name: "Отсутствует имя",
 			tag: models.Tag{
 				ID:       1,
-				Name:     "",
+				Name:     newLocalizedText(""),
 				HexColor: "#FF5733",
 			},
 			wantError: true,
@@ -344,7 +345,7 @@ func TestTagService_Update(t *testing.T) {
 			name: "Ошибка репозитория - тег не найден",
 			tag: models.Tag{
 				ID:       999,
-				Name:     "Backend",
+				Name: newLocalizedText("Backend"),
 				HexColor: "#FF5733",
 			},
 			mockError: errors.New("tag not found"),
@@ -380,8 +381,8 @@ func TestTagService_Update(t *testing.T) {
 				if err != nil {
 					t.Errorf("Не ожидалась ошибка, получили: %v", err)
 				}
-				if result.Name != tt.mockTag.Name {
-					t.Errorf("Ожидалось Name = %s, получили %s", tt.mockTag.Name, result.Name)
+				if result.Name.Get(i18n.LocaleRU) != tt.mockTag.Name.Get(i18n.LocaleRU) {
+					t.Errorf("Ожидалось Name = %s, получили %s", tt.mockTag.Name.Get(i18n.LocaleRU), result.Name.Get(i18n.LocaleRU))
 				}
 			}
 		})

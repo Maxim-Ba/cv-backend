@@ -1,0 +1,23 @@
+package pages
+
+import (
+	"github.com/Maxim-Ba/cv-backend/internal/repository"
+	"github.com/Maxim-Ba/cv-backend/internal/view/components/components"
+	"github.com/Maxim-Ba/cv-backend/internal/view/components/layout"
+)
+
+templ HeroPage(user string, profile repository.Profile, csrfToken string) {
+	@layout.Base("Hero", heroPage(profile, csrfToken), user)
+}
+
+templ heroPage(profile repository.Profile, csrfToken string) {
+	<h2 class="mb-4">Hero-секция</h2>
+	@components.InlineEntityForm(components.HeroFormData(
+		profile.Greeting,
+		profile.FullName,
+		profile.Title,
+		profile.Pitch,
+		profile.ID,
+		csrfToken,
+	))
+}

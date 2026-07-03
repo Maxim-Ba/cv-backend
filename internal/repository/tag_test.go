@@ -5,6 +5,7 @@ import (
 
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +22,7 @@ func TestTagRepo_Create(t *testing.T) {
 		{
 			name: "успешное создание тега",
 			tag: models.Tag{
-				Name:     "Backend",
+				Name:     newLocalizedText("Backend"),
 				HexColor: "#FF5733",
 			},
 			wantErr: false,
@@ -29,7 +30,7 @@ func TestTagRepo_Create(t *testing.T) {
 		{
 			name: "успешное создание второго тега",
 			tag: models.Tag{
-				Name:     "Frontend",
+				Name:     newLocalizedText("Frontend"),
 				HexColor: "#33FF57",
 			},
 			wantErr: false,
@@ -57,16 +58,14 @@ func TestTagRepo_Create_DuplicateName(t *testing.T) {
 	cleanupTable(t, "tag")
 	repo := NewTagRepo(testDB)
 
-	// Создаем первый тег
 	_, err := repo.Create(models.Tag{
-		Name:     "Duplicate",
+		Name:     newLocalizedText("Duplicate"),
 		HexColor: "#111111",
 	})
 	require.NoError(t, err)
 
-	// Пытаемся создать тег с тем же именем
 	_, err = repo.Create(models.Tag{
-		Name:     "Duplicate",
+		Name:     newLocalizedText("Duplicate"),
 		HexColor: "#222222",
 	})
 	require.Error(t, err, "должна быть ошибка при дублировании имени")
@@ -76,9 +75,8 @@ func TestTagRepo_Get(t *testing.T) {
 	cleanupTable(t, "tag")
 	repo := NewTagRepo(testDB)
 
-	// Создаем тег для теста
 	created, err := repo.Create(models.Tag{
-		Name:     "TestGet",
+		Name:     newLocalizedText("TestGet"),
 		HexColor: "#ABCDEF",
 	})
 	require.NoError(t, err)
@@ -122,9 +120,8 @@ func TestTagRepo_Update(t *testing.T) {
 	cleanupTable(t, "tag")
 	repo := NewTagRepo(testDB)
 
-	// Создаем тег для теста
 	created, err := repo.Create(models.Tag{
-		Name:     "Original",
+		Name:     newLocalizedText("Original"),
 		HexColor: "#000000",
 	})
 	require.NoError(t, err)
@@ -138,7 +135,7 @@ func TestTagRepo_Update(t *testing.T) {
 			name: "успешное обновление тега",
 			tag: models.Tag{
 				ID:       created.ID,
-				Name:     "Updated",
+				Name:     newLocalizedText("Updated"),
 				HexColor: "#FFFFFF",
 			},
 			wantErr: false,
@@ -147,7 +144,7 @@ func TestTagRepo_Update(t *testing.T) {
 			name: "обновление несуществующего тега",
 			tag: models.Tag{
 				ID:       99999,
-				Name:     "NonExistent",
+				Name:     newLocalizedText("NonExistent"),
 				HexColor: "#123456",
 			},
 			wantErr: true,
@@ -176,9 +173,8 @@ func TestTagRepo_Delete(t *testing.T) {
 	cleanupTable(t, "tag")
 	repo := NewTagRepo(testDB)
 
-	// Создаем тег для удаления
 	created, err := repo.Create(models.Tag{
-		Name:     "ToDelete",
+		Name:     newLocalizedText("ToDelete"),
 		HexColor: "#AABBCC",
 	})
 	require.NoError(t, err)
@@ -213,7 +209,6 @@ func TestTagRepo_Delete(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tt.id, deletedID)
 
-			// Проверяем, что тег действительно удален
 			_, err = repo.Get(tt.id)
 			require.Error(t, err)
 		})
@@ -224,12 +219,11 @@ func TestTagRepo_DeleteList(t *testing.T) {
 	cleanupTable(t, "tag")
 	repo := NewTagRepo(testDB)
 
-	// Создаем несколько тегов
-	tag1, err := repo.Create(models.Tag{Name: "Tag1", HexColor: "#111111"})
+	tag1, err := repo.Create(models.Tag{Name: newLocalizedText("Tag1"), HexColor: "#111111"})
 	require.NoError(t, err)
-	tag2, err := repo.Create(models.Tag{Name: "Tag2", HexColor: "#222222"})
+	tag2, err := repo.Create(models.Tag{Name: newLocalizedText("Tag2"), HexColor: "#222222"})
 	require.NoError(t, err)
-	tag3, err := repo.Create(models.Tag{Name: "Tag3", HexColor: "#333333"})
+	tag3, err := repo.Create(models.Tag{Name: newLocalizedText("Tag3"), HexColor: "#333333"})
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -262,7 +256,6 @@ func TestTagRepo_DeleteList(t *testing.T) {
 		})
 	}
 
-	// Проверяем, что tag3 все еще существует
 	got, err := repo.Get(tag3.ID)
 	require.NoError(t, err)
 	assert.Equal(t, tag3.Name, got.Name)
@@ -272,13 +265,12 @@ func TestTagRepo_List(t *testing.T) {
 	cleanupTable(t, "tag")
 	repo := NewTagRepo(testDB)
 
-	// Создаем тестовые данные
 	tags := []models.Tag{
-		{Name: "Alpha", HexColor: "#AAA111"},
-		{Name: "Beta", HexColor: "#BBB222"},
-		{Name: "Gamma", HexColor: "#CCC333"},
-		{Name: "Delta", HexColor: "#DDD444"},
-		{Name: "Epsilon", HexColor: "#EEE555"},
+		{Name: newLocalizedText("Alpha"), HexColor: "#AAA111"},
+		{Name: newLocalizedText("Beta"), HexColor: "#BBB222"},
+		{Name: newLocalizedText("Gamma"), HexColor: "#CCC333"},
+		{Name: newLocalizedText("Delta"), HexColor: "#DDD444"},
+		{Name: newLocalizedText("Epsilon"), HexColor: "#EEE555"},
 	}
 
 	for _, tag := range tags {
@@ -370,19 +362,17 @@ func TestTagRepo_List_WithFilter(t *testing.T) {
 	cleanupTable(t, "tag")
 	repo := NewTagRepo(testDB)
 
-	// Создаем тестовые данные
-	_, err := repo.Create(models.Tag{Name: "Backend", HexColor: "#111111"})
+	backend, err := repo.Create(models.Tag{Name: newLocalizedText("Backend"), HexColor: "#111111"})
 	require.NoError(t, err)
-	_, err = repo.Create(models.Tag{Name: "Frontend", HexColor: "#222222"})
+	_, err = repo.Create(models.Tag{Name: newLocalizedText("Frontend"), HexColor: "#222222"})
 	require.NoError(t, err)
 
-	// Фильтрация по имени
 	req := entityreqdecorator.PagebleRq{
 		Page: 1,
 		Size: 10,
 		Filter: map[string]entityreqdecorator.SQLGenerator{
-			"name": &entityreqdecorator.PredicateLike{
-				Predicate: entityreqdecorator.Predicate{Value: "Backend"},
+			"hex_color": &entityreqdecorator.PredicateEQ{
+				Predicate: entityreqdecorator.Predicate{Value: "#111111"},
 			},
 		},
 	}
@@ -391,22 +381,20 @@ func TestTagRepo_List_WithFilter(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, result.Total)
 	assert.Len(t, result.Content, 1)
-	assert.Equal(t, "Backend", result.Content[0].Name)
+	assert.Equal(t, backend.ID, result.Content[0].ID)
 }
 
 func TestTagRepo_List_Sorting(t *testing.T) {
 	cleanupTable(t, "tag")
 	repo := NewTagRepo(testDB)
 
-	// Создаем тестовые данные в определенном порядке
-	_, err := repo.Create(models.Tag{Name: "Charlie", HexColor: "#333333"})
+	_, err := repo.Create(models.Tag{Name: newLocalizedText("Charlie"), HexColor: "#333333"})
 	require.NoError(t, err)
-	_, err = repo.Create(models.Tag{Name: "Alpha", HexColor: "#111111"})
+	_, err = repo.Create(models.Tag{Name: newLocalizedText("Alpha"), HexColor: "#111111"})
 	require.NoError(t, err)
-	_, err = repo.Create(models.Tag{Name: "Bravo", HexColor: "#222222"})
+	_, err = repo.Create(models.Tag{Name: newLocalizedText("Bravo"), HexColor: "#222222"})
 	require.NoError(t, err)
 
-	// Сортировка по имени ASC
 	req := entityreqdecorator.PagebleRq{
 		Page: 1,
 		Size: 10,
@@ -418,16 +406,15 @@ func TestTagRepo_List_Sorting(t *testing.T) {
 	result, err := repo.List(req)
 	require.NoError(t, err)
 	require.Len(t, result.Content, 3)
-	assert.Equal(t, "Alpha", result.Content[0].Name)
-	assert.Equal(t, "Bravo", result.Content[1].Name)
-	assert.Equal(t, "Charlie", result.Content[2].Name)
+	assert.Equal(t, "Alpha", result.Content[0].Name.Get(i18n.LocaleRU))
+	assert.Equal(t, "Bravo", result.Content[1].Name.Get(i18n.LocaleRU))
+	assert.Equal(t, "Charlie", result.Content[2].Name.Get(i18n.LocaleRU))
 
-	// Сортировка по имени DESC
 	req.Sort[0].Order = "DESC"
 	result, err = repo.List(req)
 	require.NoError(t, err)
 	require.Len(t, result.Content, 3)
-	assert.Equal(t, "Charlie", result.Content[0].Name)
-	assert.Equal(t, "Bravo", result.Content[1].Name)
-	assert.Equal(t, "Alpha", result.Content[2].Name)
+	assert.Equal(t, "Charlie", result.Content[0].Name.Get(i18n.LocaleRU))
+	assert.Equal(t, "Bravo", result.Content[1].Name.Get(i18n.LocaleRU))
+	assert.Equal(t, "Alpha", result.Content[2].Name.Get(i18n.LocaleRU))
 }

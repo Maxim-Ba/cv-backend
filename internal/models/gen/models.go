@@ -5,28 +5,31 @@
 package models
 
 import (
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Education struct {
-	ID           int64       `json:"id"`
-	Name         pgtype.Text `json:"name"`
-	Year         int32       `json:"year"`
-	Course       string      `json:"course"`
-	Organization string      `json:"organization"`
+	ID           int64                       `json:"id"`
+	Name         i18n.NullableLocalizedText  `json:"name"`
+	Year         int32                       `json:"year"`
+	Course       i18n.LocalizedText          `json:"course"`
+	Organization i18n.LocalizedText          `json:"organization"`
 }
 
 type Profile struct {
-	ID       int64       `json:"id"`
-	FullName string      `json:"fullName"`
-	Title    string      `json:"title"`
-	About    pgtype.Text `json:"about"`
-	Email    string      `json:"email"`
-	Telegram string      `json:"telegram"`
-	Github   string      `json:"github"`
-	Phone    string      `json:"phone"`
-	Note     pgtype.Text `json:"note"`
-	Hobbies  pgtype.Text `json:"hobbies"`
+	ID        int64                       `json:"id"`
+	FullName  i18n.LocalizedText          `json:"fullName"`
+	Title     i18n.LocalizedText          `json:"title"`
+	Greeting  i18n.LocalizedText          `json:"greeting"`
+	Pitch     i18n.LocalizedText          `json:"pitch"`
+	About     i18n.NullableLocalizedText  `json:"about"`
+	Email     string                      `json:"email"`
+	Telegram  string                      `json:"telegram"`
+	Github    string                      `json:"github"`
+	Phone     string                      `json:"phone"`
+	Note      i18n.NullableLocalizedText  `json:"note"`
+	Hobbies   i18n.NullableLocalizedText  `json:"hobbies"`
 }
 
 type ProfileTechnology struct {
@@ -35,9 +38,9 @@ type ProfileTechnology struct {
 }
 
 type Tag struct {
-	ID       int64  `json:"id"`
-	Name     string `json:"name"`
-	HexColor string `json:"hexColor"`
+	ID       int64              `json:"id"`
+	Name     i18n.LocalizedText `json:"name"`
+	HexColor string             `json:"hexColor"`
 }
 
 type TechnologiesTag struct {
@@ -46,22 +49,22 @@ type TechnologiesTag struct {
 }
 
 type Technology struct {
-	ID          int64       `json:"id"`
-	Title       string      `json:"title"`
-	Description pgtype.Text `json:"description"`
-	LogoUrl     pgtype.Text `json:"logoUrl"`
+	ID          int64                       `json:"id"`
+	Title       string                      `json:"title"`
+	Description i18n.NullableLocalizedText  `json:"description"`
+	LogoUrl     pgtype.Text                 `json:"logoUrl"`
 }
 
 type WorkHistory struct {
-	ID          int64       `json:"id"`
-	Name        string      `json:"name"`
-	About       string      `json:"about"`
-	LogoUrl     pgtype.Text `json:"logoUrl"`
-	PeriodStart pgtype.Date `json:"periodStart"`
-	PeriodEnd   pgtype.Date `json:"periodEnd"`
-	WhatIDid    []string    `json:"whatIDid"`
-	Projects    []string    `json:"projects"`
-	JobTitle    pgtype.Text `json:"jobTitle"`
+	ID          int64                    `json:"id"`
+	Name        i18n.LocalizedText       `json:"name"`
+	About       i18n.LocalizedText       `json:"about"`
+	LogoUrl     pgtype.Text              `json:"logoUrl"`
+	PeriodStart pgtype.Date              `json:"periodStart"`
+	PeriodEnd   pgtype.Date              `json:"periodEnd"`
+	WhatIDid    i18n.LocalizedStringList `json:"whatIDid"`
+	Projects    i18n.LocalizedStringList `json:"projects"`
+	JobTitle    i18n.NullableLocalizedText `json:"jobTitle"`
 }
 
 type WorkHistoryTechnology struct {

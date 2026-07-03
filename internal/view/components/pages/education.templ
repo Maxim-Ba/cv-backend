@@ -33,10 +33,10 @@ templ educationPage(eduResult entityreqdecorator.PagebleRs[models.Education], ed
 				for _, edu := range eduResult.Content {
 					<tr>
 						<td>{ strconv.FormatInt(edu.ID, 10) }</td>
-						<td>{ edu.Name.String }</td>
+						<td>{ components.DisplayNullableRU(edu.Name) }</td>
 						<td>{ strconv.Itoa(int(edu.Year)) }</td>
-						<td>{ edu.Course }</td>
-						<td>{ edu.Organization }</td>
+						<td>{ components.DisplayRU(edu.Course) }</td>
+						<td>{ components.DisplayRU(edu.Organization) }</td>
 						<td>
 							<a href={ "?edit=" + strconv.FormatInt(edu.ID, 10) } class="btn btn-sm btn-warning">Изменить</a>
 							<form method="POST" action="/admin/education" style="display:inline;">

@@ -10,9 +10,10 @@ import (
 	"github.com/go-pdf/fpdf"
 
 	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
-	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
+	"github.com/Maxim-Ba/cv-backend/internal/models/mapper"
 	"github.com/Maxim-Ba/cv-backend/internal/repository"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 )
 
 //go:embed fonts/DejaVuSans.ttf
@@ -38,7 +39,7 @@ type ProfileGetter interface {
 
 // AboutMeGetter интерфейс для получения секции «О себе»
 type AboutMeGetter interface {
-	GetAboutMe() (dto.AboutMeDTO, error)
+	GetAboutMe(locale i18n.Locale) (dto.AboutMeDTO, error)
 }
 
 // PDFService генерирует PDF-резюме из данных БД
@@ -68,20 +69,21 @@ func NewPDFService(
 }
 
 // GenerateCV собирает данные из БД и генерирует PDF с CV
-func (s *PDFService) GenerateCV() ([]byte, error) {
+func (s *PDFService) GenerateCV(locale i18n.Locale) ([]byte, error) {
 	profile, err := s.profile.Get()
 	if err != nil {
 		return nil, fmt.Errorf("pdf: get profile: %w", err)
 	}
 
+	labels := i18n.PDFSectionLabels(locale)
 	allPage := entityreqdecorator.PagebleRq{Page: 1, Size: 200}
 
-	whResult, err := s.wh.ListWithTechnologies(allPage)
+	whResult, err := s.wh.ListWithTechnologies(allPage, locale)
 	if err != nil {
 		return nil, fmt.Errorf("pdf: get work history: %w", err)
 	}
 
-	techResult, err := s.tech.ListWithTags(allPage)
+	techResult, err := s.tech.ListWithTags(allPage, locale)
 	if err != nil {
 		return nil, fmt.Errorf("pdf: get technologies: %w", err)
 	}
@@ -98,33 +100,33 @@ func (s *PDFService) GenerateCV() ([]byte, error) {
 	pdf.SetAutoPageBreak(true, pdfMargin)
 	pdf.AddPage()
 
-	pdfRenderHeader(pdf, profile)
+	pdfRenderHeader(pdf, profile, locale)
 
-	aboutMe, err := s.aboutMe.GetAboutMe()
+	aboutMe, err := s.aboutMe.GetAboutMe(locale)
 	if err != nil {
 		return nil, fmt.Errorf("pdf: get about me: %w", err)
 	}
 	if pdfAboutMeHasContent(aboutMe) {
-		pdfSectionTitle(pdf, "О СЕБЕ")
-		pdfAboutMe(pdf, aboutMe)
+		pdfSectionTitle(pdf, strings.ToUpper(labels["about"]))
+		pdfAboutMe(pdf, aboutMe, locale)
 	}
 
 	if len(whResult.Content) > 0 {
-		pdfSectionTitle(pdf, "ОПЫТ РАБОТЫ")
+		pdfSectionTitle(pdf, strings.ToUpper(labels["work"]))
 		for _, w := range whResult.Content {
-			pdfWorkItem(pdf, w)
+			pdfWorkItem(pdf, w, locale, labels)
 		}
 	}
 
 	if len(techResult.Content) > 0 {
-		pdfSectionTitle(pdf, "ТЕХНОЛОГИИ")
+		pdfSectionTitle(pdf, strings.ToUpper(labels["technologies"]))
 		pdfTechnologies(pdf, techResult.Content)
 	}
 
 	if len(eduResult.Content) > 0 {
-		pdfSectionTitle(pdf, "ОБРАЗОВАНИЕ")
+		pdfSectionTitle(pdf, strings.ToUpper(labels["education"]))
 		for _, e := range eduResult.Content {
-			pdfEducationItem(pdf, e)
+			pdfEducationItem(pdf, mapper.EducationToDTO(e, locale))
 		}
 	}
 
@@ -136,18 +138,18 @@ func (s *PDFService) GenerateCV() ([]byte, error) {
 }
 
 // pdfRenderHeader рисует шапку с именем, должностью и контактами
-func pdfRenderHeader(pdf *fpdf.Fpdf, p repository.Profile) {
+func pdfRenderHeader(pdf *fpdf.Fpdf, p repository.Profile, locale i18n.Locale) {
 	pdf.SetFillColor(pdfHeaderBgR, pdfHeaderBgG, pdfHeaderBgB)
 	pdf.Rect(0, 0, 210, 44, "F")
 
 	pdf.SetTextColor(255, 255, 255)
 	pdf.SetXY(pdfMargin, 8)
 	pdf.SetFont("DejaVu", "B", 22)
-	pdf.CellFormat(pdfContentW, 10, p.FullName, "", 1, "L", false, 0, "")
+	pdf.CellFormat(pdfContentW, 10, p.FullName.Resolve(locale), "", 1, "L", false, 0, "")
 
 	pdf.SetFont("DejaVu", "", 13)
 	pdf.SetX(pdfMargin)
-	pdf.CellFormat(pdfContentW, 7, p.Title, "", 1, "L", false, 0, "")
+	pdf.CellFormat(pdfContentW, 7, p.Title.Resolve(locale), "", 1, "L", false, 0, "")
 
 	contacts := pdfBuildContacts(p)
 	if contacts != "" {
@@ -195,7 +197,11 @@ func pdfAboutMeHasContent(aboutMe dto.AboutMeDTO) bool {
 }
 
 // pdfAboutMe рисует секцию «О себе»: биография, бейджи технологий, заметка и хобби
-func pdfAboutMe(pdf *fpdf.Fpdf, aboutMe dto.AboutMeDTO) {
+func pdfAboutMe(pdf *fpdf.Fpdf, aboutMe dto.AboutMeDTO, locale i18n.Locale) {
+	stackLabel := "Стек:"
+	if locale == i18n.LocaleEN {
+		stackLabel = "Stack:"
+	}
 	pdf.SetFont("DejaVu", "", 9)
 	for _, paragraph := range aboutMe.BioParagraphs {
 		if strings.TrimSpace(paragraph) == "" {
@@ -213,7 +219,7 @@ func pdfAboutMe(pdf *fpdf.Fpdf, aboutMe dto.AboutMeDTO) {
 		}
 		pdf.SetX(pdfMargin)
 		pdf.SetFont("DejaVu", "B", 9)
-		pdf.CellFormat(24, pdfLineH, "Стек:", "", 0, "L", false, 0, "")
+		pdf.CellFormat(24, pdfLineH, stackLabel, "", 0, "L", false, 0, "")
 		pdf.SetFont("DejaVu", "", 9)
 		pdf.MultiCell(pdfContentW-24, pdfLineH, strings.Join(names, "  •  "), "", "L", false)
 	}
@@ -250,8 +256,14 @@ func pdfSectionTitle(pdf *fpdf.Fpdf, title string) {
 }
 
 // pdfWorkItem рисует одну запись опыта работы
-func pdfWorkItem(pdf *fpdf.Fpdf, w dto.WorkHistoryWithTechnologiesDTO) {
-	period := pdfFormatPeriod(w.PeriodStart, w.PeriodEnd)
+func pdfWorkItem(pdf *fpdf.Fpdf, w dto.WorkHistoryWithTechnologiesDTO, locale i18n.Locale, labels map[string]string) {
+	period := pdfFormatPeriod(w.PeriodStart, w.PeriodEnd, labels["present"])
+	whatLabel := "Что я делал:"
+	techLabel := "Технологии:"
+	if locale == i18n.LocaleEN {
+		whatLabel = "What I did:"
+		techLabel = "Technologies:"
+	}
 
 	pdf.SetX(pdfMargin)
 	pdf.SetFont("DejaVu", "B", 10)
@@ -270,7 +282,7 @@ func pdfWorkItem(pdf *fpdf.Fpdf, w dto.WorkHistoryWithTechnologiesDTO) {
 	if len(w.WhatIDid) > 0 {
 		pdf.SetX(pdfMargin)
 		pdf.SetFont("DejaVu", "B", 9)
-		pdf.CellFormat(pdfContentW, pdfLineH, "Что я делал:", "", 1, "L", false, 0, "")
+		pdf.CellFormat(pdfContentW, pdfLineH, whatLabel, "", 1, "L", false, 0, "")
 		pdf.SetFont("DejaVu", "", 9)
 		for _, item := range w.WhatIDid {
 			if strings.TrimSpace(item) == "" {
@@ -288,7 +300,7 @@ func pdfWorkItem(pdf *fpdf.Fpdf, w dto.WorkHistoryWithTechnologiesDTO) {
 		}
 		pdf.SetX(pdfMargin)
 		pdf.SetFont("DejaVu", "B", 9)
-		pdf.CellFormat(24, pdfLineH, "Технологии:", "", 0, "L", false, 0, "")
+		pdf.CellFormat(24, pdfLineH, techLabel, "", 0, "L", false, 0, "")
 		pdf.SetFont("DejaVu", "", 9)
 		pdf.MultiCell(pdfContentW-24, pdfLineH, strings.Join(names, ", "), "", "L", false)
 	}
@@ -316,14 +328,10 @@ func pdfTechnologies(pdf *fpdf.Fpdf, techs []dto.TechnologyWithTagsDTO) {
 }
 
 // pdfEducationItem рисует одну запись образования
-func pdfEducationItem(pdf *fpdf.Fpdf, e models.Education) {
-	nameStr := ""
-	if e.Name.Valid {
-		nameStr = e.Name.String
-	}
+func pdfEducationItem(pdf *fpdf.Fpdf, e dto.EducationDTO) {
 	line := e.Course + " — " + e.Organization
-	if nameStr != "" {
-		line = nameStr + ": " + line
+	if e.Name != nil && *e.Name != "" {
+		line = *e.Name + ": " + line
 	}
 
 	pdf.SetX(pdfMargin)
@@ -334,12 +342,12 @@ func pdfEducationItem(pdf *fpdf.Fpdf, e models.Education) {
 }
 
 // pdfFormatPeriod форматирует диапазон дат для отображения в PDF
-func pdfFormatPeriod(start, end *string) string {
+func pdfFormatPeriod(start, end *string, presentLabel string) string {
 	s := "—"
 	if start != nil && len(*start) >= 7 {
 		s = pdfFormatDate(*start)
 	}
-	e := "по настоящее время"
+	e := presentLabel
 	if end != nil && *end != "" {
 		e = pdfFormatDate(*end)
 	}

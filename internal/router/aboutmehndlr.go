@@ -7,6 +7,7 @@ import (
 	_ "github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	"github.com/Maxim-Ba/cv-backend/internal/services"
 	"github.com/Maxim-Ba/cv-backend/pkg/apierrors"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 )
 
 // AboutMeHandler хендлер для секции «О себе»
@@ -20,16 +21,9 @@ func NewAboutMeHandler(ps *services.ProfileService) *AboutMeHandler {
 }
 
 // AboutMeGet возвращает данные секции «О себе»
-//
-// @Summary      Получить секцию «О себе»
-// @Tags         about-me
-// @Produce      json
-// @Success      200  {object}  dto.AboutMeDTO
-// @Failure      404  {object}  apierrors.APIError
-// @Failure      500  {object}  apierrors.APIError
-// @Router       /about-me [get]
 func (h *AboutMeHandler) AboutMeGet(w http.ResponseWriter, r *http.Request) {
-	aboutMe, err := h.service.GetAboutMe()
+	locale := i18n.FromContext(r.Context())
+	aboutMe, err := h.service.GetAboutMe(locale)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			apierrors.WriteError(w, http.StatusNotFound, "about me not found")
@@ -46,16 +40,6 @@ func (h *AboutMeHandler) AboutMeGet(w http.ResponseWriter, r *http.Request) {
 }
 
 // AboutMeUpdate обновляет данные секции «О себе»
-//
-// @Summary      Обновить секцию «О себе»
-// @Tags         about-me
-// @Accept       json
-// @Produce      json
-// @Param        body  body  object{bioParagraphs=[]string,note=string,hobbies=string,technologyIds=[]int64}  true  "Данные секции"
-// @Success      200  {object}  dto.AboutMeDTO
-// @Failure      400  {object}  apierrors.APIError
-// @Failure      500  {object}  apierrors.APIError
-// @Router       /about-me [put]
 func (h *AboutMeHandler) AboutMeUpdate(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		BioParagraphs []string `json:"bioParagraphs"`
@@ -69,9 +53,9 @@ func (h *AboutMeHandler) AboutMeUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	input := services.UpdateAboutMeInput{
-		About:         services.JoinBioParagraphs(req.BioParagraphs),
-		Note:          req.Note,
-		Hobbies:       req.Hobbies,
+		About:         i18n.FromLegacyText(services.JoinBioParagraphs(req.BioParagraphs)),
+		Note:          i18n.FromLegacyText(req.Note),
+		Hobbies:       i18n.FromLegacyText(req.Hobbies),
 		TechnologyIDs: req.TechnologyIds,
 	}
 	if err := h.service.UpdateAboutMe(input); err != nil {
@@ -79,7 +63,8 @@ func (h *AboutMeHandler) AboutMeUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	aboutMe, err := h.service.GetAboutMe()
+	locale := i18n.FromContext(r.Context())
+	aboutMe, err := h.service.GetAboutMe(locale)
 	if err != nil {
 		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return

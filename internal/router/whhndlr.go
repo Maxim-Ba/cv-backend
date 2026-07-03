@@ -13,6 +13,7 @@ import (
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	"github.com/Maxim-Ba/cv-backend/internal/services"
 	"github.com/Maxim-Ba/cv-backend/pkg/apierrors"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
@@ -47,7 +48,7 @@ func (wh *WorkHistoryHandler) WorkHistoryGet(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	workHistory, err := wh.service.GetWithTechnologies(whID)
+	workHistory, err := wh.service.GetWithTechnologies(whID, i18n.FromContext(r.Context()))
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			apierrors.WriteError(w, http.StatusNotFound, "work history not found")
@@ -76,7 +77,7 @@ func (wh *WorkHistoryHandler) WorkHistoryGet(w http.ResponseWriter, r *http.Requ
 func (wh *WorkHistoryHandler) WorkHistoryList(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	pagebleRq := entityreqdecorator.ParseQueryParams(queryParams)
-	list, err := wh.service.ListWithTechnologies(pagebleRq)
+	list, err := wh.service.ListWithTechnologies(pagebleRq, i18n.FromContext(r.Context()))
 	if err != nil {
 		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -132,14 +133,14 @@ func (wh *WorkHistoryHandler) WorkHistoryCreate(w http.ResponseWriter, r *http.R
 	}
 
 	workHistory := models.WorkHistory{
-		Name:        reqData.Name,
-		JobTitle:    pgtype.Text{String: reqData.JobTitle, Valid: reqData.JobTitle != ""},
-		About:       reqData.About,
+		Name:        i18n.FromLegacyText(reqData.Name),
+		JobTitle:    i18n.NullableFromLegacy(optionalStringPtr(reqData.JobTitle)),
+		About:       i18n.FromLegacyText(reqData.About),
 		LogoUrl:     pgtype.Text{String: reqData.LogoUrl, Valid: reqData.LogoUrl != ""},
 		PeriodStart: periodStart,
 		PeriodEnd:   periodEnd,
-		WhatIDid:    reqData.WhatIDid,
-		Projects:    reqData.Projects,
+		WhatIDid:    i18n.FromLegacyStringList(reqData.WhatIDid),
+		Projects:    i18n.FromLegacyStringList(reqData.Projects),
 	}
 
 	created, err := wh.service.Create(workHistory)
@@ -259,14 +260,14 @@ func (wh *WorkHistoryHandler) WorkHistoryUpdate(w http.ResponseWriter, r *http.R
 
 	workHistory := models.WorkHistory{
 		ID:          reqData.ID,
-		Name:        reqData.Name,
-		JobTitle:    pgtype.Text{String: reqData.JobTitle, Valid: reqData.JobTitle != ""},
-		About:       reqData.About,
+		Name:        i18n.FromLegacyText(reqData.Name),
+		JobTitle:    i18n.NullableFromLegacy(optionalStringPtr(reqData.JobTitle)),
+		About:       i18n.FromLegacyText(reqData.About),
 		LogoUrl:     pgtype.Text{String: reqData.LogoUrl, Valid: reqData.LogoUrl != ""},
 		PeriodStart: periodStart,
 		PeriodEnd:   periodEnd,
-		WhatIDid:    reqData.WhatIDid,
-		Projects:    reqData.Projects,
+		WhatIDid:    i18n.FromLegacyStringList(reqData.WhatIDid),
+		Projects:    i18n.FromLegacyStringList(reqData.Projects),
 	}
 
 	updated, err := wh.service.Update(workHistory)

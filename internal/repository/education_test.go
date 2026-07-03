@@ -5,7 +5,7 @@ import (
 
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,20 +22,20 @@ func TestEducationRepo_Create(t *testing.T) {
 		{
 			name: "успешное создание записи образования",
 			education: models.Education{
-				Name:         pgtype.Text{String: "Основы Go", Valid: true},
+				Name:         newNullableLocalizedText("Основы Go"),
 				Year:         2023,
-				Course:       "Backend Development",
-				Organization: "Yandex Practicum",
+				Course:       newLocalizedText("Backend Development"),
+				Organization: newLocalizedText("Yandex Practicum"),
 			},
 			wantErr: false,
 		},
 		{
 			name: "успешное создание записи без имени",
 			education: models.Education{
-				Name:         pgtype.Text{Valid: false},
+				Name:         i18n.NullableLocalizedText{},
 				Year:         2022,
-				Course:       "Python",
-				Organization: "Coursera",
+				Course:       newLocalizedText("Python"),
+				Organization: newLocalizedText("Coursera"),
 			},
 			wantErr: false,
 		},
@@ -64,12 +64,11 @@ func TestEducationRepo_Get(t *testing.T) {
 	cleanupTable(t, "education")
 	repo := NewEducationRepo(testDB)
 
-	// Создаем запись для теста
 	created, err := repo.Create(models.Education{
-		Name:         pgtype.Text{String: "Test Course", Valid: true},
+		Name:         newNullableLocalizedText("Test Course"),
 		Year:         2024,
-		Course:       "Testing",
-		Organization: "Test Org",
+		Course:       newLocalizedText("Testing"),
+		Organization: newLocalizedText("Test Org"),
 	})
 	require.NoError(t, err)
 
@@ -114,12 +113,11 @@ func TestEducationRepo_Update(t *testing.T) {
 	cleanupTable(t, "education")
 	repo := NewEducationRepo(testDB)
 
-	// Создаем запись для теста
 	created, err := repo.Create(models.Education{
-		Name:         pgtype.Text{String: "Original", Valid: true},
+		Name:         newNullableLocalizedText("Original"),
 		Year:         2020,
-		Course:       "Original Course",
-		Organization: "Original Org",
+		Course:       newLocalizedText("Original Course"),
+		Organization: newLocalizedText("Original Org"),
 	})
 	require.NoError(t, err)
 
@@ -132,10 +130,10 @@ func TestEducationRepo_Update(t *testing.T) {
 			name: "успешное обновление записи",
 			education: models.Education{
 				ID:           created.ID,
-				Name:         pgtype.Text{String: "Updated", Valid: true},
+				Name:         newNullableLocalizedText("Updated"),
 				Year:         2024,
-				Course:       "Updated Course",
-				Organization: "Updated Org",
+				Course:       newLocalizedText("Updated Course"),
+				Organization: newLocalizedText("Updated Org"),
 			},
 			wantErr: false,
 		},
@@ -143,10 +141,10 @@ func TestEducationRepo_Update(t *testing.T) {
 			name: "обновление несуществующей записи",
 			education: models.Education{
 				ID:           99999,
-				Name:         pgtype.Text{String: "NonExistent", Valid: true},
+				Name:         newNullableLocalizedText("NonExistent"),
 				Year:         2000,
-				Course:       "No Course",
-				Organization: "No Org",
+				Course:       newLocalizedText("No Course"),
+				Organization: newLocalizedText("No Org"),
 			},
 			wantErr: true,
 		},
@@ -176,12 +174,11 @@ func TestEducationRepo_Delete(t *testing.T) {
 	cleanupTable(t, "education")
 	repo := NewEducationRepo(testDB)
 
-	// Создаем запись для удаления
 	created, err := repo.Create(models.Education{
-		Name:         pgtype.Text{String: "ToDelete", Valid: true},
+		Name:         newNullableLocalizedText("ToDelete"),
 		Year:         2021,
-		Course:       "Delete Course",
-		Organization: "Delete Org",
+		Course:       newLocalizedText("Delete Course"),
+		Organization: newLocalizedText("Delete Org"),
 	})
 	require.NoError(t, err)
 
@@ -215,7 +212,6 @@ func TestEducationRepo_Delete(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tt.id, deletedID)
 
-			// Проверяем, что запись действительно удалена
 			_, err = repo.Get(tt.id)
 			require.Error(t, err)
 		})
@@ -226,28 +222,27 @@ func TestEducationRepo_DeleteList(t *testing.T) {
 	cleanupTable(t, "education")
 	repo := NewEducationRepo(testDB)
 
-	// Создаем несколько записей
 	edu1, err := repo.Create(models.Education{
-		Name:         pgtype.Text{String: "Edu1", Valid: true},
+		Name:         newNullableLocalizedText("Edu1"),
 		Year:         2020,
-		Course:       "Course1",
-		Organization: "Org1",
+		Course:       newLocalizedText("Course1"),
+		Organization: newLocalizedText("Org1"),
 	})
 	require.NoError(t, err)
 
 	edu2, err := repo.Create(models.Education{
-		Name:         pgtype.Text{String: "Edu2", Valid: true},
+		Name:         newNullableLocalizedText("Edu2"),
 		Year:         2021,
-		Course:       "Course2",
-		Organization: "Org2",
+		Course:       newLocalizedText("Course2"),
+		Organization: newLocalizedText("Org2"),
 	})
 	require.NoError(t, err)
 
 	edu3, err := repo.Create(models.Education{
-		Name:         pgtype.Text{String: "Edu3", Valid: true},
+		Name:         newNullableLocalizedText("Edu3"),
 		Year:         2022,
-		Course:       "Course3",
-		Organization: "Org3",
+		Course:       newLocalizedText("Course3"),
+		Organization: newLocalizedText("Org3"),
 	})
 	require.NoError(t, err)
 
@@ -281,23 +276,21 @@ func TestEducationRepo_DeleteList(t *testing.T) {
 		})
 	}
 
-	// Проверяем, что edu3 все еще существует
 	got, err := repo.Get(edu3.ID)
 	require.NoError(t, err)
-	assert.Equal(t, "Edu3", got.Name.String)
+	assert.Equal(t, "Edu3", got.Name.Get(i18n.LocaleRU))
 }
 
 func TestEducationRepo_List(t *testing.T) {
 	cleanupTable(t, "education")
 	repo := NewEducationRepo(testDB)
 
-	// Создаем тестовые данные
 	educations := []models.Education{
-		{Name: pgtype.Text{String: "Course A", Valid: true}, Year: 2020, Course: "A", Organization: "Org A"},
-		{Name: pgtype.Text{String: "Course B", Valid: true}, Year: 2021, Course: "B", Organization: "Org B"},
-		{Name: pgtype.Text{String: "Course C", Valid: true}, Year: 2022, Course: "C", Organization: "Org C"},
-		{Name: pgtype.Text{String: "Course D", Valid: true}, Year: 2023, Course: "D", Organization: "Org D"},
-		{Name: pgtype.Text{String: "Course E", Valid: true}, Year: 2024, Course: "E", Organization: "Org E"},
+		{Name: newNullableLocalizedText("Course A"), Year: 2020, Course: newLocalizedText("A"), Organization: newLocalizedText("Org A")},
+		{Name: newNullableLocalizedText("Course B"), Year: 2021, Course: newLocalizedText("B"), Organization: newLocalizedText("Org B")},
+		{Name: newNullableLocalizedText("Course C"), Year: 2022, Course: newLocalizedText("C"), Organization: newLocalizedText("Org C")},
+		{Name: newNullableLocalizedText("Course D"), Year: 2023, Course: newLocalizedText("D"), Organization: newLocalizedText("Org D")},
+		{Name: newNullableLocalizedText("Course E"), Year: 2024, Course: newLocalizedText("E"), Organization: newLocalizedText("Org E")},
 	}
 
 	for _, edu := range educations {
@@ -365,24 +358,22 @@ func TestEducationRepo_List_WithFilter(t *testing.T) {
 	cleanupTable(t, "education")
 	repo := NewEducationRepo(testDB)
 
-	// Создаем тестовые данные
 	_, err := repo.Create(models.Education{
-		Name:         pgtype.Text{String: "Go Course", Valid: true},
+		Name:         newNullableLocalizedText("Go Course"),
 		Year:         2023,
-		Course:       "Go Programming",
-		Organization: "Yandex",
+		Course:       newLocalizedText("Go Programming"),
+		Organization: newLocalizedText("Yandex"),
 	})
 	require.NoError(t, err)
 
 	_, err = repo.Create(models.Education{
-		Name:         pgtype.Text{String: "Python Course", Valid: true},
+		Name:         newNullableLocalizedText("Python Course"),
 		Year:         2022,
-		Course:       "Python Programming",
-		Organization: "Coursera",
+		Course:       newLocalizedText("Python Programming"),
+		Organization: newLocalizedText("Coursera"),
 	})
 	require.NoError(t, err)
 
-	// Фильтрация по году
 	req := entityreqdecorator.PagebleRq{
 		Page: 1,
 		Size: 10,
@@ -404,32 +395,30 @@ func TestEducationRepo_List_Sorting(t *testing.T) {
 	cleanupTable(t, "education")
 	repo := NewEducationRepo(testDB)
 
-	// Создаем тестовые данные
 	_, err := repo.Create(models.Education{
-		Name:         pgtype.Text{String: "2022 Course", Valid: true},
+		Name:         newNullableLocalizedText("2022 Course"),
 		Year:         2022,
-		Course:       "Course",
-		Organization: "Org",
+		Course:       newLocalizedText("Course"),
+		Organization: newLocalizedText("Org"),
 	})
 	require.NoError(t, err)
 
 	_, err = repo.Create(models.Education{
-		Name:         pgtype.Text{String: "2024 Course", Valid: true},
+		Name:         newNullableLocalizedText("2024 Course"),
 		Year:         2024,
-		Course:       "Course",
-		Organization: "Org",
+		Course:       newLocalizedText("Course"),
+		Organization: newLocalizedText("Org"),
 	})
 	require.NoError(t, err)
 
 	_, err = repo.Create(models.Education{
-		Name:         pgtype.Text{String: "2023 Course", Valid: true},
+		Name:         newNullableLocalizedText("2023 Course"),
 		Year:         2023,
-		Course:       "Course",
-		Organization: "Org",
+		Course:       newLocalizedText("Course"),
+		Organization: newLocalizedText("Org"),
 	})
 	require.NoError(t, err)
 
-	// Сортировка по году ASC
 	req := entityreqdecorator.PagebleRq{
 		Page: 1,
 		Size: 10,
@@ -445,7 +434,6 @@ func TestEducationRepo_List_Sorting(t *testing.T) {
 	assert.Equal(t, int32(2023), result.Content[1].Year)
 	assert.Equal(t, int32(2024), result.Content[2].Year)
 
-	// Сортировка по году DESC
 	req.Sort[0].Order = "DESC"
 	result, err = repo.List(req)
 	require.NoError(t, err)

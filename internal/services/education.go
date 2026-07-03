@@ -91,7 +91,7 @@ func (s *EducationService) List(r entityreqdecorator.PagebleRq) (entityreqdecora
 
 // Create создает новую запись образования
 func (s *EducationService) Create(education models.Education) (models.Education, error) {
-	if education.Course == "" || education.Organization == "" {
+	if education.Course.IsEmpty() || education.Organization.IsEmpty() {
 		return models.Education{}, fmt.Errorf("course and organization are required fields")
 	}
 	res, err := s.repo.Create(education)
@@ -106,7 +106,7 @@ func (s *EducationService) Update(education models.Education) (models.Education,
 	if education.ID == 0 {
 		return models.Education{}, fmt.Errorf("invalid education ID: %d", education.ID)
 	}
-	if education.Course == "" || education.Organization == "" {
+	if education.Course.IsEmpty() || education.Organization.IsEmpty() {
 		return models.Education{}, fmt.Errorf("course and organization are required fields")
 	}
 	res, err := s.repo.Update(education)

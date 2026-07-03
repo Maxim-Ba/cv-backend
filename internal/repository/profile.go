@@ -5,16 +5,19 @@ import (
 	"fmt"
 
 	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 )
 
 // Profile хранит контактные данные владельца CV
 type Profile struct {
 	ID       int64
-	FullName string
-	Title    string
-	About    *string
-	Note     *string
-	Hobbies  *string
+	FullName i18n.LocalizedText
+	Title    i18n.LocalizedText
+	Greeting i18n.LocalizedText
+	Pitch    i18n.LocalizedText
+	About    i18n.NullableLocalizedText
+	Note     i18n.NullableLocalizedText
+	Hobbies  i18n.NullableLocalizedText
 	Email    *string
 	Telegram *string
 	GitHub   *string
@@ -34,7 +37,7 @@ func NewProfileRepo(db *sql.DB) *ProfileRepo {
 // Get возвращает единственную запись профиля
 func (r *ProfileRepo) Get() (Profile, error) {
 	const query = `
-		SELECT id, full_name, title, about, note, hobbies, email, telegram, github, phone
+		SELECT id, full_name, title, greeting, pitch, about, note, hobbies, email, telegram, github, phone
 		FROM profile
 		LIMIT 1
 	`
@@ -43,6 +46,8 @@ func (r *ProfileRepo) Get() (Profile, error) {
 		&p.ID,
 		&p.FullName,
 		&p.Title,
+		&p.Greeting,
+		&p.Pitch,
 		&p.About,
 		&p.Note,
 		&p.Hobbies,
@@ -61,7 +66,7 @@ func (r *ProfileRepo) Get() (Profile, error) {
 }
 
 // GetAboutMeWithTechnologies возвращает данные секции «О себе» с технологиями-бейджами
-func (r *ProfileRepo) GetAboutMeWithTechnologies() (Profile, []dto.TechnologyWithTagsDTO, error) {
+func (r *ProfileRepo) GetAboutMeWithTechnologies(locale i18n.Locale) (Profile, []dto.TechnologyWithTagsDTO, error) {
 	profile, err := r.Get()
 	if err != nil {
 		return Profile{}, nil, err
@@ -91,10 +96,10 @@ func (r *ProfileRepo) GetAboutMeWithTechnologies() (Profile, []dto.TechnologyWit
 		var (
 			techID      int64
 			techTitle   string
-			techDesc    sql.NullString
+			techDesc    i18n.NullableLocalizedText
 			techLogo    sql.NullString
 			tagID       sql.NullInt64
-			tagName     sql.NullString
+			tagName     i18n.LocalizedText
 			tagHexColor sql.NullString
 		)
 		if err := rows.Scan(
@@ -113,7 +118,7 @@ func (r *ProfileRepo) GetAboutMeWithTechnologies() (Profile, []dto.TechnologyWit
 				Tags: []dto.TagDTO{},
 			}
 			if techDesc.Valid {
-				tech.Description = &techDesc.String
+				tech.Description = techDesc.Resolve(locale)
 			}
 			if techLogo.Valid {
 				tech.LogoUrl = &techLogo.String
@@ -125,7 +130,7 @@ func (r *ProfileRepo) GetAboutMeWithTechnologies() (Profile, []dto.TechnologyWit
 		if tagID.Valid {
 			techMap[techID].Tags = append(techMap[techID].Tags, dto.TagDTO{
 				ID:       tagID.Int64,
-				Name:     tagName.String,
+				Name:     tagName.Resolve(locale),
 				HexColor: tagHexColor.String,
 			})
 		}
@@ -143,15 +148,40 @@ func (r *ProfileRepo) GetAboutMeWithTechnologies() (Profile, []dto.TechnologyWit
 }
 
 // UpdateAboutMe обновляет текстовые поля секции «О себе»
-func (r *ProfileRepo) UpdateAboutMe(profileID int64, about, note, hobbies string) error {
+func (r *ProfileRepo) UpdateAboutMe(profileID int64, about, note, hobbies i18n.LocalizedText) error {
 	const query = `
 		UPDATE profile
-		SET about = NULLIF($2, ''), note = NULLIF($3, ''), hobbies = NULLIF($4, '')
+		SET about = $2, note = $3, hobbies = $4
 		WHERE id = $1
 	`
-	result, err := r.db.Exec(query, profileID, about, note, hobbies)
+	aboutVal := i18n.NullableLocalizedText{Text: about, Valid: !about.IsEmpty()}
+	noteVal := i18n.NullableLocalizedText{Text: note, Valid: !note.IsEmpty()}
+	hobbiesVal := i18n.NullableLocalizedText{Text: hobbies, Valid: !hobbies.IsEmpty()}
+
+	result, err := r.db.Exec(query, profileID, aboutVal, noteVal, hobbiesVal)
 	if err != nil {
 		return fmt.Errorf("failed to update profile about me: %w", err)
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
+		return fmt.Errorf("profile not found")
+	}
+	return nil
+}
+
+// UpdateHero обновляет hero-поля профиля
+func (r *ProfileRepo) UpdateHero(profileID int64, greeting, fullName, title, pitch i18n.LocalizedText) error {
+	const query = `
+		UPDATE profile
+		SET greeting = $2, full_name = $3, title = $4, pitch = $5
+		WHERE id = $1
+	`
+	result, err := r.db.Exec(query, profileID, greeting, fullName, title, pitch)
+	if err != nil {
+		return fmt.Errorf("failed to update profile hero: %w", err)
 	}
 	rows, err := result.RowsAffected()
 	if err != nil {

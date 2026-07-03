@@ -9,13 +9,12 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"github.com/Maxim-Ba/cv-backend/internal/models/gen"
+	"github.com/Maxim-Ba/cv-backend/internal/repository"
 	"github.com/Maxim-Ba/cv-backend/internal/view/components/components"
 	"github.com/Maxim-Ba/cv-backend/internal/view/components/layout"
-	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 )
 
-func AboutMePage(user string, profileAbout i18n.LocalizedText, profileNote i18n.LocalizedText, profileHobbies i18n.LocalizedText, allTech []models.Technology, selectedTechnologyIDs map[int64]bool, csrfToken string) templ.Component {
+func HeroPage(user string, profile repository.Profile, csrfToken string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -36,7 +35,7 @@ func AboutMePage(user string, profileAbout i18n.LocalizedText, profileNote i18n.
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = layout.Base("О себе", aboutMePage(profileAbout, profileNote, profileHobbies, allTech, selectedTechnologyIDs, csrfToken), user).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layout.Base("Hero", heroPage(profile, csrfToken), user).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -44,7 +43,7 @@ func AboutMePage(user string, profileAbout i18n.LocalizedText, profileNote i18n.
 	})
 }
 
-func aboutMePage(profileAbout, profileNote, profileHobbies i18n.LocalizedText, allTech []models.Technology, selectedTechnologyIDs map[int64]bool, csrfToken string) templ.Component {
+func heroPage(profile repository.Profile, csrfToken string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -65,16 +64,16 @@ func aboutMePage(profileAbout, profileNote, profileHobbies i18n.LocalizedText, a
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h2 class=\"mb-4\">Секция «О себе»</h2>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h2 class=\"mb-4\">Hero-секция</h2>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = components.InlineEntityForm(components.AboutMeFormData(
-			profileAbout,
-			profileNote,
-			profileHobbies,
-			allTech,
-			selectedTechnologyIDs,
+		templ_7745c5c3_Err = components.InlineEntityForm(components.HeroFormData(
+			profile.Greeting,
+			profile.FullName,
+			profile.Title,
+			profile.Pitch,
+			profile.ID,
 			csrfToken,
 		)).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {

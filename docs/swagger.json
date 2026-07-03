@@ -9,6 +9,37 @@
     "host": "localhost:3333",
     "basePath": "/api",
     "paths": {
+        "/hero": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "hero"
+                ],
+                "summary": "Получить hero-секцию",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.HeroDTO"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/about-me": {
             "get": {
                 "produces": [
@@ -1305,6 +1336,23 @@
                 }
             }
         },
+        "dto.HeroDTO": {
+            "type": "object",
+            "properties": {
+                "fullName": {
+                    "type": "string"
+                },
+                "greeting": {
+                    "type": "string"
+                },
+                "pitch": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.AboutMeDTO": {
             "type": "object",
             "properties": {
@@ -1485,6 +1533,9 @@
                 "id": {
                     "type": "integer"
                 },
+                "jobTitle": {
+                    "type": "string"
+                },
                 "logoUrl": {
                     "type": "string"
                 },
@@ -1539,6 +1590,9 @@
                 },
                 "id": {
                     "type": "integer"
+                },
+                "jobTitle": {
+                    "type": "string"
                 },
                 "logoUrl": {
                     "type": "string"

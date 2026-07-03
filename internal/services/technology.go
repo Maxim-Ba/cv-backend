@@ -5,6 +5,7 @@ import (
 
 	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
@@ -22,8 +23,8 @@ type TechReader interface {
 	List(entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[models.Technology], error)
 }
 type TechDTOReader interface {
-	GetWithTags(id int64) (dto.TechnologyWithTagsDTO, error)
-	ListWithTags(entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO], error)
+	GetWithTags(id int64, locale i18n.Locale) (dto.TechnologyWithTagsDTO, error)
+	ListWithTags(r entityreqdecorator.PagebleRq, locale i18n.Locale) (entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO], error)
 }
 type TechTagWriter interface {
 	SetTags(technologyID int64, tagIDs []int64) error
@@ -90,11 +91,11 @@ func (s *TechService) List(r entityreqdecorator.PagebleRq) (entityreqdecorator.P
 }
 
 // GetWithTags получает технологию с тегами по ID
-func (s *TechService) GetWithTags(id int64) (dto.TechnologyWithTagsDTO, error) {
+func (s *TechService) GetWithTags(id int64, locale i18n.Locale) (dto.TechnologyWithTagsDTO, error) {
 	if id == 0 {
 		return dto.TechnologyWithTagsDTO{}, fmt.Errorf("invalid technology ID: %d", id)
 	}
-	res, err := s.repo.GetWithTags(id)
+	res, err := s.repo.GetWithTags(id, locale)
 	if err != nil {
 		return dto.TechnologyWithTagsDTO{}, fmt.Errorf("error getting technology with tags: %w", err)
 	}
@@ -102,8 +103,8 @@ func (s *TechService) GetWithTags(id int64) (dto.TechnologyWithTagsDTO, error) {
 }
 
 // ListWithTags получает список технологий с тегами
-func (s *TechService) ListWithTags(r entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO], error) {
-	res, err := s.repo.ListWithTags(r)
+func (s *TechService) ListWithTags(r entityreqdecorator.PagebleRq, locale i18n.Locale) (entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO], error) {
+	res, err := s.repo.ListWithTags(r, locale)
 	if err != nil {
 		return entityreqdecorator.PagebleRs[dto.TechnologyWithTagsDTO]{}, fmt.Errorf("error in getting list with tags from Tech repo: %w", err)
 	}

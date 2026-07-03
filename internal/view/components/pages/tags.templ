@@ -1,52 +1,55 @@
 package pages
 
-import "github.com/Maxim-Ba/cv-backend/internal/view/components/layout"
-import "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
-import "github.com/Maxim-Ba/cv-backend/internal/models/gen"
-import "github.com/Maxim-Ba/cv-backend/internal/view/components/components"
-import "strconv"
+import (
+	"strconv"
+
+	"github.com/Maxim-Ba/cv-backend/internal/models/gen"
+	"github.com/Maxim-Ba/cv-backend/internal/view/components/components"
+	"github.com/Maxim-Ba/cv-backend/internal/view/components/layout"
+	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
+)
 
 templ TagPage(user string, tagsResult entityreqdecorator.PagebleRs[models.Tag], editTag models.Tag, editID string, csrfToken string) {
-  @layout.Base("Tag", tagPage(user, tagsResult, editTag, editID, csrfToken), user)
+	@layout.Base("Tag", tagPage(tagsResult, editTag, editID, csrfToken), user)
 }
 
-templ tagPage(user string, tagsResult entityreqdecorator.PagebleRs[models.Tag], editTag models.Tag, editID string, csrfToken string) {
-  <div class="mb-3">
-    <a href="?create=1" class="btn btn-success">+ Создать тег</a>
-  </div>
-  @components.CRUDGrid(tagsResult, components.Entity{Name: "tag"}) {
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Название</th>
-          <th>Цвет</th>
-          <th>Действия</th>
-        </tr>
-      </thead>
-      <tbody>
-        for _, tag := range tagsResult.Content {
-          <tr>
-            <td>{ strconv.FormatInt(tag.ID, 10) }</td>
-            <td>{ tag.Name }</td>
-            <td style={ "background-color: " + tag.HexColor + ";" }>{ tag.HexColor }</td>
-            <td>
-              <a href={ "?edit=" + strconv.FormatInt(tag.ID, 10) } class="btn btn-sm btn-warning">Изменить</a>
-              <form method="POST" action="/admin/tag" style="display:inline;">
-                <input type="hidden" name="_method" value="DELETE"/>
-                <input type="hidden" name="csrf_token" value={ csrfToken }/>
-                <input type="hidden" name="id" value={ strconv.FormatInt(tag.ID, 10) }/>
-                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Удалить тег?')">Удалить</button>
-              </form>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  }
-  if editID == "create" {
-    @components.ModalForm(components.TagFormData(models.Tag{}, csrfToken, false))
-  } else if editID != "" {
-    @components.ModalForm(components.TagFormData(editTag, csrfToken, true))
-  }
+templ tagPage(tagsResult entityreqdecorator.PagebleRs[models.Tag], editTag models.Tag, editID string, csrfToken string) {
+	<div class="mb-3">
+		<a href="?create=1" class="btn btn-success">+ Создать тег</a>
+	</div>
+	@components.CRUDGrid(tagsResult, components.Entity{Name: "tag"}) {
+		<table class="table table-striped">
+			<thead>
+				<tr>
+					<th>ID</th>
+					<th>Название (RU)</th>
+					<th>Цвет</th>
+					<th>Действия</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, tag := range tagsResult.Content {
+					<tr>
+						<td>{ strconv.FormatInt(tag.ID, 10) }</td>
+						<td>{ components.DisplayRU(tag.Name) }</td>
+						<td style={ "background-color: " + tag.HexColor + ";" }>{ tag.HexColor }</td>
+						<td>
+							<a href={ "?edit=" + strconv.FormatInt(tag.ID, 10) } class="btn btn-sm btn-warning">Изменить</a>
+							<form method="POST" action="/admin/tag" style="display:inline;">
+								<input type="hidden" name="_method" value="DELETE"/>
+								<input type="hidden" name="csrf_token" value={ csrfToken }/>
+								<input type="hidden" name="id" value={ strconv.FormatInt(tag.ID, 10) }/>
+								<button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Удалить тег?')">Удалить</button>
+							</form>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
+	if editID == "create" {
+		@components.ModalForm(components.TagFormData(models.Tag{}, csrfToken, false))
+	} else if editID != "" {
+		@components.ModalForm(components.TagFormData(editTag, csrfToken, true))
+	}
 }

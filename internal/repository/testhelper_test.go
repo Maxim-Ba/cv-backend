@@ -9,7 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -84,23 +86,23 @@ func TestMain(m *testing.M) {
 func runMigrations(db *sql.DB) error {
 	// Создаем таблицы из миграций
 	migrations := []string{
-		// 0001_init.up.sql
 		`CREATE TABLE IF NOT EXISTS tag (
 			id BIGSERIAL PRIMARY KEY,
-			name TEXT NOT NULL UNIQUE,
+			name JSONB NOT NULL,
 			hex_color TEXT NOT NULL UNIQUE
 		)`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS tag_name_ru_unique ON tag ((name->>'ru'))`,
 		`CREATE TABLE IF NOT EXISTS education (
 			id BIGSERIAL PRIMARY KEY,
-			name TEXT,
+			name JSONB,
 			year INT NOT NULL,
-			course TEXT NOT NULL,
-			organization TEXT NOT NULL
+			course JSONB NOT NULL,
+			organization JSONB NOT NULL
 		)`,
 		`CREATE TABLE IF NOT EXISTS technology (
 			id BIGSERIAL PRIMARY KEY,
 			title TEXT NOT NULL UNIQUE,
-			description TEXT,
+			description JSONB,
 			logo_url TEXT
 		)`,
 		`CREATE TABLE IF NOT EXISTS technologies_tag (
@@ -110,14 +112,14 @@ func runMigrations(db *sql.DB) error {
 		)`,
 		`CREATE TABLE IF NOT EXISTS work_history (
 			id BIGSERIAL PRIMARY KEY,
-			name TEXT NOT NULL,
-			about TEXT NOT NULL,
-			logo_url BYTEA,
+			name JSONB NOT NULL,
+			about JSONB NOT NULL,
+			logo_url TEXT,
 			period_start DATE NOT NULL,
 			period_end DATE,
-			what_i_did TEXT[],
-			projects TEXT[],
-			job_title TEXT
+			what_i_did JSONB,
+			projects JSONB,
+			job_title JSONB
 		)`,
 		`CREATE TABLE IF NOT EXISTS work_history_technology (
 			work_history_id BIGINT NOT NULL REFERENCES work_history (id) ON DELETE CASCADE,
@@ -146,6 +148,28 @@ func cleanupTable(t *testing.T, tableName string) {
 
 	// Сбрасываем sequence если она существует
 	_, _ = testDB.Exec(fmt.Sprintf("ALTER SEQUENCE %s_id_seq RESTART WITH 1", tableName))
+}
+
+func newPgText(s string) pgtype.Text {
+	return pgtype.Text{String: s, Valid: true}
+}
+
+func newLocalizedText(ru string) i18n.LocalizedText {
+	return i18n.FromLegacyText(ru)
+}
+
+func newNullableLocalizedText(ru string) i18n.NullableLocalizedText {
+	if ru == "" {
+		return i18n.NullableLocalizedText{}
+	}
+	return i18n.NullableLocalizedText{
+		Text:  i18n.FromLegacyText(ru),
+		Valid: true,
+	}
+}
+
+func newLocalizedStringList(values ...string) i18n.LocalizedStringList {
+	return i18n.FromLegacyStringList(values)
 }
 
 // cleanupAllTables очищает все таблицы перед тестом

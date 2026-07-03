@@ -6,9 +6,9 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5/pgtype"
-
-	_ "github.com/Maxim-Ba/cv-backend/internal/models/dto"
+	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
+	"github.com/Maxim-Ba/cv-backend/internal/models/mapper"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	"github.com/Maxim-Ba/cv-backend/internal/services"
 	"github.com/Maxim-Ba/cv-backend/pkg/apierrors"
@@ -57,7 +57,7 @@ func (eh *EducationHandler) EducationGet(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(education); err != nil {
+	if err := json.NewEncoder(w).Encode(mapper.EducationToDTO(education, i18n.FromContext(r.Context()))); err != nil {
 		apierrors.WriteError(w, http.StatusInternalServerError, "failed to encode response")
 	}
 }
@@ -80,8 +80,18 @@ func (eh *EducationHandler) EducationList(w http.ResponseWriter, r *http.Request
 		apierrors.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	locale := i18n.FromContext(r.Context())
+	content := make([]dto.EducationDTO, 0, len(list.Content))
+	for _, edu := range list.Content {
+		content = append(content, mapper.EducationToDTO(edu, locale))
+	}
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(list); err != nil {
+	if err := json.NewEncoder(w).Encode(dto.EducationListResponse{
+		Total:   list.Total,
+		Content: content,
+		Page:    list.Page,
+		Size:    list.Size,
+	}); err != nil {
 		apierrors.WriteError(w, http.StatusInternalServerError, "failed to encode response")
 	}
 }
@@ -111,10 +121,10 @@ func (eh *EducationHandler) EducationCreate(w http.ResponseWriter, r *http.Reque
 	}
 
 	education := models.Education{
-		Name:         pgtype.Text{String: reqData.Name, Valid: reqData.Name != ""},
+		Name:         i18n.NullableFromLegacy(optionalStringPtr(reqData.Name)),
 		Year:         reqData.Year,
-		Course:       reqData.Course,
-		Organization: reqData.Organization,
+		Course:       i18n.FromLegacyText(reqData.Course),
+		Organization: i18n.FromLegacyText(reqData.Organization),
 	}
 
 	created, err := eh.service.Create(education)
@@ -210,10 +220,10 @@ func (eh *EducationHandler) EducationUpdate(w http.ResponseWriter, r *http.Reque
 
 	education := models.Education{
 		ID:           reqData.ID,
-		Name:         pgtype.Text{String: reqData.Name, Valid: reqData.Name != ""},
+		Name:         i18n.NullableFromLegacy(optionalStringPtr(reqData.Name)),
 		Year:         reqData.Year,
-		Course:       reqData.Course,
-		Organization: reqData.Organization,
+		Course:       i18n.FromLegacyText(reqData.Course),
+		Organization: i18n.FromLegacyText(reqData.Organization),
 	}
 
 	updated, err := eh.service.Update(education)

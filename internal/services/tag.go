@@ -82,7 +82,7 @@ func (s *TagService) List(r entityreqdecorator.PagebleRq) (entityreqdecorator.Pa
 
 // Create создает новый тег
 func (s *TagService) Create(tag models.Tag) (models.Tag, error) {
-	if tag.Name == "" {
+	if tag.Name.IsEmpty() {
 		return models.Tag{}, fmt.Errorf("tag name is required")
 	}
 	if tag.HexColor == "" {
@@ -100,7 +100,7 @@ func (s *TagService) Update(tag models.Tag) (models.Tag, error) {
 	if tag.ID == 0 {
 		return models.Tag{}, fmt.Errorf("invalid tag ID: %d", tag.ID)
 	}
-	if tag.Name == "" {
+	if tag.Name.IsEmpty() {
 		return models.Tag{}, fmt.Errorf("tag name is required")
 	}
 	if tag.HexColor == "" {

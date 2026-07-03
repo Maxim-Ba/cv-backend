@@ -1,0 +1,127 @@
+package components
+
+templ BilingualTextField(field FormField) {
+	<div class="bilingual-field mb-2">
+		<label class="form-label fw-semibold">{ field.Label }</label>
+		<div class="mb-2">
+			<label class="form-label text-muted small mb-1" for={ "field-" + field.Name + "-ru" }>RU</label>
+			if field.IsTextArea {
+				<textarea
+					class="form-control"
+					id={ "field-" + field.Name + "-ru" }
+					name={ field.Name + "_ru" }
+					rows="3"
+					placeholder={ field.Placeholder }
+					required?={ field.Required }
+				>{ field.ValueRU }</textarea>
+			} else {
+				<input
+					type="text"
+					class="form-control"
+					id={ "field-" + field.Name + "-ru" }
+					name={ field.Name + "_ru" }
+					value={ field.ValueRU }
+					placeholder={ field.Placeholder }
+					required?={ field.Required }
+				/>
+			}
+		</div>
+		<div>
+			<label class="form-label text-muted small mb-1" for={ "field-" + field.Name + "-en" }>EN</label>
+			if field.IsTextArea {
+				<textarea
+					class="form-control"
+					id={ "field-" + field.Name + "-en" }
+					name={ field.Name + "_en" }
+					rows="3"
+					placeholder={ field.Placeholder }
+				>{ field.ValueEN }</textarea>
+			} else {
+				<input
+					type="text"
+					class="form-control"
+					id={ "field-" + field.Name + "-en" }
+					name={ field.Name + "_en" }
+					value={ field.ValueEN }
+					placeholder={ field.Placeholder }
+				/>
+			}
+		</div>
+	</div>
+}
+
+templ renderFormField(field FormField) {
+	if field.Type == "bilingual-text" || field.Type == "bilingual-textarea" {
+		@BilingualTextField(field)
+	} else if field.IsTextArea {
+		<div class="mb-3">
+			<label for={ "field-" + field.Name } class="form-label">{ field.Label }</label>
+			<textarea
+				class="form-control"
+				id={ "field-" + field.Name }
+				name={ field.Name }
+				rows="3"
+				placeholder={ field.Placeholder }
+				required?={ field.Required }
+			>{ field.Value }</textarea>
+		</div>
+	} else if field.Type == "checkbox-group" {
+		<div class="mb-3">
+			<label class="form-label">{ field.Label }</label>
+			<div class="d-flex flex-wrap gap-2">
+				for _, opt := range field.Options {
+					<div class="form-check">
+						<input
+							class="form-check-input"
+							type="checkbox"
+							name={ field.Name }
+							value={ opt.Value }
+							id={ "field-" + field.Name + "-" + opt.Value }
+							checked?={ opt.Checked }
+						/>
+						<label class="form-check-label" for={ "field-" + field.Name + "-" + opt.Value }>
+							<span class="badge" style={ "background-color: " + opt.Color }>{ opt.Label }</span>
+						</label>
+					</div>
+				}
+			</div>
+		</div>
+	} else if field.Type == "color" {
+		<div class="mb-3">
+			<label for={ "field-" + field.Name } class="form-label">{ field.Label }</label>
+			<div class="input-group">
+				<input
+					type="color"
+					class="form-control form-control-color"
+					id={ "field-" + field.Name + "-picker" }
+					value={ field.Value }
+					oninput="adminSyncColorToText(this)"
+					title="Выберите цвет"
+				/>
+				<input
+					type="text"
+					class="form-control font-monospace"
+					id={ "field-" + field.Name }
+					name={ field.Name }
+					value={ field.Value }
+					placeholder={ field.Placeholder }
+					required?={ field.Required }
+					oninput="adminSyncTextToPicker(this)"
+				/>
+			</div>
+		</div>
+	} else {
+		<div class="mb-3">
+			<label for={ "field-" + field.Name } class="form-label">{ field.Label }</label>
+			<input
+				type={ field.Type }
+				class="form-control"
+				id={ "field-" + field.Name }
+				name={ field.Name }
+				value={ field.Value }
+				placeholder={ field.Placeholder }
+				required?={ field.Required }
+			/>
+		</div>
+	}
+}

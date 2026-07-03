@@ -10,6 +10,7 @@ import (
 	"github.com/Maxim-Ba/cv-backend/internal/models/dto"
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 )
 
 // MockWorkHistoryRepo мок-репозиторий для тестирования WorkHistoryService
@@ -64,11 +65,11 @@ func (m *MockWorkHistoryRepo) DeleteList(ids []int64) ([]int64, error) {
 	return nil, nil
 }
 
-func (m *MockWorkHistoryRepo) GetWithTechnologies(id int64) (dto.WorkHistoryWithTechnologiesDTO, error) {
+func (m *MockWorkHistoryRepo) GetWithTechnologies(id int64, locale i18n.Locale) (dto.WorkHistoryWithTechnologiesDTO, error) {
 	return dto.WorkHistoryWithTechnologiesDTO{}, nil
 }
 
-func (m *MockWorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.PagebleRq) (entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO], error) {
+func (m *MockWorkHistoryRepo) ListWithTechnologies(req entityreqdecorator.PagebleRq, locale i18n.Locale) (entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO], error) {
 	return entityreqdecorator.PagebleRs[dto.WorkHistoryWithTechnologiesDTO]{}, nil
 }
 
@@ -93,13 +94,13 @@ func TestWorkHistoryService_Get(t *testing.T) {
 			id:   1,
 			mockWH: models.WorkHistory{
 				ID:          1,
-				Name:        "Яндекс",
-				About:       "Работал Backend разработчиком",
-				LogoUrl:     pgtype.Text{String: "logo.png", Valid: true},
+				Name: newLocalizedText("Яндекс"),
+				About: newLocalizedText("Работал Backend разработчиком"),
+				LogoUrl: newPgText("logo.png"),
 				PeriodStart: pgtype.Date{Time: testDate, Valid: true},
 				PeriodEnd:   pgtype.Date{Time: testDate.AddDate(2, 0, 0), Valid: true},
-				WhatIDid:    []string{"Разработка API", "Оптимизация БД"},
-				Projects:    []string{"Поиск", "Карты"},
+				WhatIDid: newLocalizedStringList("Разработка API", "Оптимизация БД"),
+				Projects: newLocalizedStringList("Поиск", "Карты"),
 			},
 			mockError: nil,
 			wantError: false,
@@ -150,11 +151,11 @@ func TestWorkHistoryService_Get(t *testing.T) {
 				if result.ID != tt.mockWH.ID {
 					t.Errorf("Ожидался ID = %d, получили %d", tt.mockWH.ID, result.ID)
 				}
-				if result.Name != tt.mockWH.Name {
-					t.Errorf("Ожидалось Name = %s, получили %s", tt.mockWH.Name, result.Name)
+				if result.Name.Get(i18n.LocaleRU) != tt.mockWH.Name.Get(i18n.LocaleRU) {
+					t.Errorf("Ожидалось Name = %s, получили %s", tt.mockWH.Name.Get(i18n.LocaleRU), result.Name.Get(i18n.LocaleRU))
 				}
-				if len(result.WhatIDid) != len(tt.mockWH.WhatIDid) {
-					t.Errorf("Ожидалось %d элементов WhatIDid, получили %d", len(tt.mockWH.WhatIDid), len(result.WhatIDid))
+				if len(result.WhatIDid.Get(i18n.LocaleRU)) != len(tt.mockWH.WhatIDid.Get(i18n.LocaleRU)) {
+					t.Errorf("Ожидалось %d элементов WhatIDid, получили %d", len(tt.mockWH.WhatIDid.Get(i18n.LocaleRU)), len(result.WhatIDid.Get(i18n.LocaleRU)))
 				}
 			}
 		})
@@ -183,21 +184,21 @@ func TestWorkHistoryService_List(t *testing.T) {
 				Content: []models.WorkHistory{
 					{
 						ID:          1,
-						Name:        "Яндекс",
-						About:       "Backend разработчик",
+						Name: newLocalizedText("Яндекс"),
+						About: newLocalizedText("Backend разработчик"),
 						PeriodStart: pgtype.Date{Time: testDate, Valid: true},
 						PeriodEnd:   pgtype.Date{Time: testDate.AddDate(2, 0, 0), Valid: true},
-						WhatIDid:    []string{"API", "БД"},
-						Projects:    []string{"Поиск"},
+						WhatIDid: newLocalizedStringList("API", "БД"),
+						Projects: newLocalizedStringList("Поиск"),
 					},
 					{
 						ID:          2,
-						Name:        "Google",
-						About:       "Software Engineer",
+						Name: newLocalizedText("Google"),
+						About: newLocalizedText("Software Engineer"),
 						PeriodStart: pgtype.Date{Time: testDate.AddDate(-3, 0, 0), Valid: true},
 						PeriodEnd:   pgtype.Date{Time: testDate, Valid: true},
-						WhatIDid:    []string{"Development", "Testing"},
-						Projects:    []string{"Gmail", "Drive"},
+						WhatIDid: newLocalizedStringList("Development", "Testing"),
+						Projects: newLocalizedStringList("Gmail", "Drive"),
 					},
 				},
 				Page: 1,
@@ -265,23 +266,23 @@ func TestWorkHistoryService_Create(t *testing.T) {
 		{
 			name: "Успешное создание истории работы",
 			wh: models.WorkHistory{
-				Name:        "Тинькофф",
-				About:       "Go разработчик",
-				LogoUrl:     pgtype.Text{String: "tinkoff.png", Valid: true},
+				Name: newLocalizedText("Тинькофф"),
+				About: newLocalizedText("Go разработчик"),
+				LogoUrl: newPgText("tinkoff.png"),
 				PeriodStart: pgtype.Date{Time: testDate, Valid: true},
 				PeriodEnd:   pgtype.Date{Time: testDate.AddDate(1, 0, 0), Valid: true},
-				WhatIDid:    []string{"Микросервисы", "Kafka"},
-				Projects:    []string{"Банкинг", "Инвестиции"},
+				WhatIDid: newLocalizedStringList("Микросервисы", "Kafka"),
+				Projects: newLocalizedStringList("Банкинг", "Инвестиции"),
 			},
 			mockWH: models.WorkHistory{
 				ID:          3,
-				Name:        "Тинькофф",
-				About:       "Go разработчик",
-				LogoUrl:     pgtype.Text{String: "tinkoff.png", Valid: true},
+				Name: newLocalizedText("Тинькофф"),
+				About: newLocalizedText("Go разработчик"),
+				LogoUrl: newPgText("tinkoff.png"),
 				PeriodStart: pgtype.Date{Time: testDate, Valid: true},
 				PeriodEnd:   pgtype.Date{Time: testDate.AddDate(1, 0, 0), Valid: true},
-				WhatIDid:    []string{"Микросервисы", "Kafka"},
-				Projects:    []string{"Банкинг", "Инвестиции"},
+				WhatIDid: newLocalizedStringList("Микросервисы", "Kafka"),
+				Projects: newLocalizedStringList("Банкинг", "Инвестиции"),
 			},
 			mockError: nil,
 			wantError: false,
@@ -289,8 +290,8 @@ func TestWorkHistoryService_Create(t *testing.T) {
 		{
 			name: "Отсутствует имя компании",
 			wh: models.WorkHistory{
-				Name:  "",
-				About: "Some description",
+				Name:  newLocalizedText(""),
+				About: newLocalizedText("Some description"),
 			},
 			wantError: true,
 			errorMsg:  "name and about are required fields",
@@ -298,8 +299,8 @@ func TestWorkHistoryService_Create(t *testing.T) {
 		{
 			name: "Отсутствует описание",
 			wh: models.WorkHistory{
-				Name:  "Company",
-				About: "",
+				Name: newLocalizedText("Company"),
+				About: newLocalizedText(""),
 			},
 			wantError: true,
 			errorMsg:  "name and about are required fields",
@@ -307,8 +308,8 @@ func TestWorkHistoryService_Create(t *testing.T) {
 		{
 			name: "Ошибка репозитория",
 			wh: models.WorkHistory{
-				Name:  "Company",
-				About: "Description",
+				Name: newLocalizedText("Company"),
+				About: newLocalizedText("Description"),
 			},
 			mockError: errors.New("database constraint violation"),
 			wantError: true,
@@ -346,8 +347,8 @@ func TestWorkHistoryService_Create(t *testing.T) {
 				if result.ID != tt.mockWH.ID {
 					t.Errorf("Ожидался ID = %d, получили %d", tt.mockWH.ID, result.ID)
 				}
-				if result.Name != tt.mockWH.Name {
-					t.Errorf("Ожидалось Name = %s, получили %s", tt.mockWH.Name, result.Name)
+				if result.Name.Get(i18n.LocaleRU) != tt.mockWH.Name.Get(i18n.LocaleRU) {
+					t.Errorf("Ожидалось Name = %s, получили %s", tt.mockWH.Name.Get(i18n.LocaleRU), result.Name.Get(i18n.LocaleRU))
 				}
 			}
 		})
@@ -370,21 +371,21 @@ func TestWorkHistoryService_Update(t *testing.T) {
 			name: "Успешное обновление истории работы",
 			wh: models.WorkHistory{
 				ID:          1,
-				Name:        "Яндекс",
-				About:       "Senior Backend Developer",
+				Name: newLocalizedText("Яндекс"),
+				About: newLocalizedText("Senior Backend Developer"),
 				PeriodStart: pgtype.Date{Time: testDate, Valid: true},
 				PeriodEnd:   pgtype.Date{Time: testDate.AddDate(3, 0, 0), Valid: true},
-				WhatIDid:    []string{"Lead development", "Mentoring"},
-				Projects:    []string{"Search", "Maps", "Cloud"},
+				WhatIDid: newLocalizedStringList("Lead development", "Mentoring"),
+				Projects: newLocalizedStringList("Search", "Maps", "Cloud"),
 			},
 			mockWH: models.WorkHistory{
 				ID:          1,
-				Name:        "Яндекс",
-				About:       "Senior Backend Developer",
+				Name: newLocalizedText("Яндекс"),
+				About: newLocalizedText("Senior Backend Developer"),
 				PeriodStart: pgtype.Date{Time: testDate, Valid: true},
 				PeriodEnd:   pgtype.Date{Time: testDate.AddDate(3, 0, 0), Valid: true},
-				WhatIDid:    []string{"Lead development", "Mentoring"},
-				Projects:    []string{"Search", "Maps", "Cloud"},
+				WhatIDid: newLocalizedStringList("Lead development", "Mentoring"),
+				Projects: newLocalizedStringList("Search", "Maps", "Cloud"),
 			},
 			mockError: nil,
 			wantError: false,
@@ -393,8 +394,8 @@ func TestWorkHistoryService_Update(t *testing.T) {
 			name: "Невалидный ID (0)",
 			wh: models.WorkHistory{
 				ID:    0,
-				Name:  "Company",
-				About: "Description",
+				Name: newLocalizedText("Company"),
+				About: newLocalizedText("Description"),
 			},
 			wantError: true,
 			errorMsg:  "invalid work history ID",
@@ -403,8 +404,8 @@ func TestWorkHistoryService_Update(t *testing.T) {
 			name: "Отсутствует имя",
 			wh: models.WorkHistory{
 				ID:    1,
-				Name:  "",
-				About: "Description",
+				Name:  newLocalizedText(""),
+				About: newLocalizedText("Description"),
 			},
 			wantError: true,
 			errorMsg:  "name and about are required fields",
@@ -413,8 +414,8 @@ func TestWorkHistoryService_Update(t *testing.T) {
 			name: "Ошибка репозитория - история не найдена",
 			wh: models.WorkHistory{
 				ID:    999,
-				Name:  "Company",
-				About: "Description",
+				Name: newLocalizedText("Company"),
+				About: newLocalizedText("Description"),
 			},
 			mockError: errors.New("work history not found"),
 			wantError: true,
@@ -449,8 +450,8 @@ func TestWorkHistoryService_Update(t *testing.T) {
 				if err != nil {
 					t.Errorf("Не ожидалась ошибка, получили: %v", err)
 				}
-				if result.About != tt.mockWH.About {
-					t.Errorf("Ожидался About = %s, получили %s", tt.mockWH.About, result.About)
+				if result.About.Get(i18n.LocaleRU) != tt.mockWH.About.Get(i18n.LocaleRU) {
+					t.Errorf("Ожидался About = %s, получили %s", tt.mockWH.About.Get(i18n.LocaleRU), result.About.Get(i18n.LocaleRU))
 				}
 				if len(result.Projects) != len(tt.mockWH.Projects) {
 					t.Errorf("Ожидалось %d проектов, получили %d", len(tt.mockWH.Projects), len(result.Projects))

@@ -7,6 +7,7 @@ import (
 
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -39,39 +40,36 @@ func TestWorkHistoryRepo_Create(t *testing.T) {
 		wantErr     bool
 	}{
 		{
-			name: "успешное создание записи истории работы",
-			workHistory: models.WorkHistory{
-				Name:        "Company A",
-				About:       "IT компания",
+			name: "успешное создание записи истории работы",			workHistory: models.WorkHistory{
+				Name: newLocalizedText("Company A"),
+				About: newLocalizedText("IT компания"),
 				LogoUrl:     pgtype.Text{String: "https://example.com/logo.png", Valid: true},
 				PeriodStart: newPgDate(2020, time.January, 1),
 				PeriodEnd:   newPgDate(2023, time.December, 31),
-				WhatIDid:    []string{"Backend development", "Code review"},
-				Projects:    []string{"Project A", "Project B"},
+				WhatIDid: newLocalizedStringList("Backend development", "Code review"),
+				Projects: newLocalizedStringList("Project A", "Project B"),
 			},
 			wantErr: false,
 		},
 		{
-			name: "успешное создание записи без даты окончания",
-			workHistory: models.WorkHistory{
-				Name:        "Company B",
-				About:       "Startup",
+			name: "успешное создание записи без даты окончания",			workHistory: models.WorkHistory{
+				Name: newLocalizedText("Company B"),
+				About: newLocalizedText("Startup"),
 				PeriodStart: newPgDate(2024, time.January, 1),
 				PeriodEnd:   pgtype.Date{Valid: false},
-				WhatIDid:    []string{"Full stack development"},
-				Projects:    []string{},
+				WhatIDid: newLocalizedStringList("Full stack development"),
+				Projects: newLocalizedStringList(),
 			},
 			wantErr: false,
 		},
 		{
-			name: "успешное создание записи с пустыми массивами",
-			workHistory: models.WorkHistory{
-				Name:        "Company C",
-				About:       "Another company",
+			name: "успешное создание записи с пустыми массивами",			workHistory: models.WorkHistory{
+				Name: newLocalizedText("Company C"),
+				About: newLocalizedText("Another company"),
 				PeriodStart: newPgDate(2019, time.June, 15),
 				PeriodEnd:   newPgDate(2020, time.June, 15),
-				WhatIDid:    []string{},
-				Projects:    []string{},
+				WhatIDid: newLocalizedStringList(),
+				Projects: newLocalizedStringList(),
 			},
 			wantErr: false,
 		},
@@ -104,12 +102,12 @@ func TestWorkHistoryRepo_Get(t *testing.T) {
 
 	// Создаем запись для теста
 	created, err := repo.Create(models.WorkHistory{
-		Name:        "Test Company",
-		About:       "Test Description",
+		Name: newLocalizedText("Test Company"),
+		About: newLocalizedText("Test Description"),
 		PeriodStart: newPgDate(2020, time.January, 1),
 		PeriodEnd:   newPgDate(2023, time.December, 31),
-		WhatIDid:    []string{"Task 1", "Task 2"},
-		Projects:    []string{"Project 1"},
+		WhatIDid: newLocalizedStringList("Task 1", "Task 2"),
+		Projects: newLocalizedStringList("Project 1"),
 	})
 	require.NoError(t, err)
 
@@ -119,13 +117,11 @@ func TestWorkHistoryRepo_Get(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "получение существующей записи",
-			id:      created.ID,
+			name: "получение существующей записи",			id:      created.ID,
 			wantErr: false,
 		},
 		{
-			name:    "получение несуществующей записи",
-			id:      99999,
+			name: "получение несуществующей записи",			id:      99999,
 			wantErr: true,
 		},
 	}
@@ -158,12 +154,12 @@ func TestWorkHistoryRepo_Update(t *testing.T) {
 
 	// Создаем запись для теста
 	created, err := repo.Create(models.WorkHistory{
-		Name:        "Original Company",
-		About:       "Original About",
+		Name: newLocalizedText("Original Company"),
+		About: newLocalizedText("Original About"),
 		PeriodStart: newPgDate(2020, time.January, 1),
 		PeriodEnd:   newPgDate(2022, time.December, 31),
-		WhatIDid:    []string{"Original Task"},
-		Projects:    []string{"Original Project"},
+		WhatIDid: newLocalizedStringList("Original Task"),
+		Projects: newLocalizedStringList("Original Project"),
 	})
 	require.NoError(t, err)
 
@@ -173,25 +169,23 @@ func TestWorkHistoryRepo_Update(t *testing.T) {
 		wantErr     bool
 	}{
 		{
-			name: "успешное обновление записи",
-			workHistory: models.WorkHistory{
+			name: "успешное обновление записи",			workHistory: models.WorkHistory{
 				ID:          created.ID,
-				Name:        "Updated Company",
-				About:       "Updated About",
+				Name: newLocalizedText("Updated Company"),
+				About: newLocalizedText("Updated About"),
 				LogoUrl:     pgtype.Text{String: "https://updated.com/logo.png", Valid: true},
 				PeriodStart: newPgDate(2021, time.February, 1),
 				PeriodEnd:   newPgDate(2024, time.January, 15),
-				WhatIDid:    []string{"Updated Task 1", "Updated Task 2"},
-				Projects:    []string{"Updated Project"},
+				WhatIDid: newLocalizedStringList("Updated Task 1", "Updated Task 2"),
+				Projects: newLocalizedStringList("Updated Project"),
 			},
 			wantErr: false,
 		},
 		{
-			name: "обновление несуществующей записи",
-			workHistory: models.WorkHistory{
+			name: "обновление несуществующей записи",			workHistory: models.WorkHistory{
 				ID:          99999,
-				Name:        "NonExistent",
-				About:       "NonExistent",
+				Name: newLocalizedText("NonExistent"),
+				About: newLocalizedText("NonExistent"),
 				PeriodStart: newPgDate(2020, time.January, 1),
 			},
 			wantErr: true,
@@ -226,11 +220,11 @@ func TestWorkHistoryRepo_Delete(t *testing.T) {
 
 	// Создаем запись для удаления
 	created, err := repo.Create(models.WorkHistory{
-		Name:        "ToDelete Company",
-		About:       "Will be deleted",
+		Name: newLocalizedText("ToDelete Company"),
+		About: newLocalizedText("Will be deleted"),
 		PeriodStart: newPgDate(2020, time.January, 1),
-		WhatIDid:    []string{},
-		Projects:    []string{},
+		WhatIDid: newLocalizedStringList(),
+		Projects: newLocalizedStringList(),
 	})
 	require.NoError(t, err)
 
@@ -240,13 +234,11 @@ func TestWorkHistoryRepo_Delete(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "успешное удаление записи",
-			id:      created.ID,
+			name: "успешное удаление записи",			id:      created.ID,
 			wantErr: false,
 		},
 		{
-			name:    "удаление несуществующей записи",
-			id:      99999,
+			name: "удаление несуществующей записи",			id:      99999,
 			wantErr: true,
 		},
 	}
@@ -277,29 +269,29 @@ func TestWorkHistoryRepo_DeleteList(t *testing.T) {
 
 	// Создаем несколько записей
 	wh1, err := repo.Create(models.WorkHistory{
-		Name:        "Company 1",
-		About:       "About 1",
+		Name: newLocalizedText("Company 1"),
+		About: newLocalizedText("About 1"),
 		PeriodStart: newPgDate(2020, time.January, 1),
-		WhatIDid:    []string{},
-		Projects:    []string{},
+		WhatIDid: newLocalizedStringList(),
+		Projects: newLocalizedStringList(),
 	})
 	require.NoError(t, err)
 
 	wh2, err := repo.Create(models.WorkHistory{
-		Name:        "Company 2",
-		About:       "About 2",
+		Name: newLocalizedText("Company 2"),
+		About: newLocalizedText("About 2"),
 		PeriodStart: newPgDate(2021, time.January, 1),
-		WhatIDid:    []string{},
-		Projects:    []string{},
+		WhatIDid: newLocalizedStringList(),
+		Projects: newLocalizedStringList(),
 	})
 	require.NoError(t, err)
 
 	wh3, err := repo.Create(models.WorkHistory{
-		Name:        "Company 3",
-		About:       "About 3",
+		Name: newLocalizedText("Company 3"),
+		About: newLocalizedText("About 3"),
 		PeriodStart: newPgDate(2022, time.January, 1),
-		WhatIDid:    []string{},
-		Projects:    []string{},
+		WhatIDid: newLocalizedStringList(),
+		Projects: newLocalizedStringList(),
 	})
 	require.NoError(t, err)
 
@@ -309,18 +301,15 @@ func TestWorkHistoryRepo_DeleteList(t *testing.T) {
 		wantDeleted int
 	}{
 		{
-			name:        "удаление нескольких записей",
-			ids:         []int64{wh1.ID, wh2.ID},
+			name: "удаление нескольких записей",			ids:         []int64{wh1.ID, wh2.ID},
 			wantDeleted: 2,
 		},
 		{
-			name:        "удаление пустого списка",
-			ids:         []int64{},
+			name: "удаление пустого списка",			ids:         []int64{},
 			wantDeleted: 0,
 		},
 		{
-			name:        "удаление с несуществующими ID",
-			ids:         []int64{99998, 99999},
+			name: "удаление с несуществующими ID",			ids:         []int64{99998, 99999},
 			wantDeleted: 0,
 		},
 	}
@@ -346,39 +335,39 @@ func TestWorkHistoryRepo_List(t *testing.T) {
 	// Создаем тестовые данные
 	workHistories := []models.WorkHistory{
 		{
-			Name:        "Company A",
-			About:       "About A",
+			Name: newLocalizedText("Company A"),
+			About: newLocalizedText("About A"),
 			PeriodStart: newPgDate(2020, time.January, 1),
-			WhatIDid:    []string{"Task A"},
-			Projects:    []string{},
+			WhatIDid: newLocalizedStringList("Task A"),
+			Projects: newLocalizedStringList(),
 		},
 		{
-			Name:        "Company B",
-			About:       "About B",
+			Name: newLocalizedText("Company B"),
+			About: newLocalizedText("About B"),
 			PeriodStart: newPgDate(2021, time.February, 1),
-			WhatIDid:    []string{"Task B"},
-			Projects:    []string{},
+			WhatIDid: newLocalizedStringList("Task B"),
+			Projects: newLocalizedStringList(),
 		},
 		{
-			Name:        "Company C",
-			About:       "About C",
+			Name: newLocalizedText("Company C"),
+			About: newLocalizedText("About C"),
 			PeriodStart: newPgDate(2022, time.March, 1),
-			WhatIDid:    []string{"Task C"},
-			Projects:    []string{},
+			WhatIDid: newLocalizedStringList("Task C"),
+			Projects: newLocalizedStringList(),
 		},
 		{
-			Name:        "Company D",
-			About:       "About D",
+			Name: newLocalizedText("Company D"),
+			About: newLocalizedText("About D"),
 			PeriodStart: newPgDate(2023, time.April, 1),
-			WhatIDid:    []string{"Task D"},
-			Projects:    []string{},
+			WhatIDid: newLocalizedStringList("Task D"),
+			Projects: newLocalizedStringList(),
 		},
 		{
-			Name:        "Company E",
-			About:       "About E",
+			Name: newLocalizedText("Company E"),
+			About: newLocalizedText("About E"),
 			PeriodStart: newPgDate(2024, time.May, 1),
-			WhatIDid:    []string{"Task E"},
-			Projects:    []string{},
+			WhatIDid: newLocalizedStringList("Task E"),
+			Projects: newLocalizedStringList(),
 		},
 	}
 
@@ -448,31 +437,30 @@ func TestWorkHistoryRepo_List_WithFilter(t *testing.T) {
 	repo := NewWorkHistoryRepo(testDB)
 
 	// Создаем тестовые данные
-	_, err := repo.Create(models.WorkHistory{
-		Name:        "Yandex",
-		About:       "Russian IT company",
+	created, err := repo.Create(models.WorkHistory{
+		Name: newLocalizedText("Yandex"),
+		About: newLocalizedText("Russian IT company"),
 		PeriodStart: newPgDate(2020, time.January, 1),
-		WhatIDid:    []string{},
-		Projects:    []string{},
+		WhatIDid: newLocalizedStringList(),
+		Projects: newLocalizedStringList(),
 	})
 	require.NoError(t, err)
 
 	_, err = repo.Create(models.WorkHistory{
-		Name:        "Google",
-		About:       "American IT company",
+		Name: newLocalizedText("Google"),
+		About: newLocalizedText("American IT company"),
 		PeriodStart: newPgDate(2022, time.June, 1),
-		WhatIDid:    []string{},
-		Projects:    []string{},
+		WhatIDid: newLocalizedStringList(),
+		Projects: newLocalizedStringList(),
 	})
 	require.NoError(t, err)
 
-	// Фильтрация по имени
 	req := entityreqdecorator.PagebleRq{
 		Page: 1,
 		Size: 10,
 		Filter: map[string]entityreqdecorator.SQLGenerator{
-			"name": &entityreqdecorator.PredicateLike{
-				Predicate: entityreqdecorator.Predicate{Value: "Yandex"},
+			"id": &entityreqdecorator.PredicateEQ{
+				Predicate: entityreqdecorator.Predicate{Value: fmt.Sprintf("%d", created.ID)},
 			},
 		},
 	}
@@ -481,7 +469,7 @@ func TestWorkHistoryRepo_List_WithFilter(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, result.Total)
 	assert.Len(t, result.Content, 1)
-	assert.Equal(t, "Yandex", result.Content[0].Name)
+	assert.Equal(t, "Yandex", result.Content[0].Name.Get(i18n.LocaleRU))
 }
 
 func TestWorkHistoryRepo_List_Sorting(t *testing.T) {
@@ -490,29 +478,29 @@ func TestWorkHistoryRepo_List_Sorting(t *testing.T) {
 
 	// Создаем тестовые данные
 	_, err := repo.Create(models.WorkHistory{
-		Name:        "Company C",
-		About:       "About C",
+		Name: newLocalizedText("Company C"),
+		About: newLocalizedText("About C"),
 		PeriodStart: newPgDate(2022, time.January, 1),
-		WhatIDid:    []string{},
-		Projects:    []string{},
+		WhatIDid: newLocalizedStringList(),
+		Projects: newLocalizedStringList(),
 	})
 	require.NoError(t, err)
 
 	_, err = repo.Create(models.WorkHistory{
-		Name:        "Company A",
-		About:       "About A",
+		Name: newLocalizedText("Company A"),
+		About: newLocalizedText("About A"),
 		PeriodStart: newPgDate(2020, time.January, 1),
-		WhatIDid:    []string{},
-		Projects:    []string{},
+		WhatIDid: newLocalizedStringList(),
+		Projects: newLocalizedStringList(),
 	})
 	require.NoError(t, err)
 
 	_, err = repo.Create(models.WorkHistory{
-		Name:        "Company B",
-		About:       "About B",
+		Name: newLocalizedText("Company B"),
+		About: newLocalizedText("About B"),
 		PeriodStart: newPgDate(2021, time.January, 1),
-		WhatIDid:    []string{},
-		Projects:    []string{},
+		WhatIDid: newLocalizedStringList(),
+		Projects: newLocalizedStringList(),
 	})
 	require.NoError(t, err)
 
@@ -528,9 +516,9 @@ func TestWorkHistoryRepo_List_Sorting(t *testing.T) {
 	result, err := repo.List(req)
 	require.NoError(t, err)
 	require.Len(t, result.Content, 3)
-	assert.Equal(t, "Company A", result.Content[0].Name)
-	assert.Equal(t, "Company B", result.Content[1].Name)
-	assert.Equal(t, "Company C", result.Content[2].Name)
+	assert.Equal(t, "Company A", result.Content[0].Name.Get(i18n.LocaleRU))
+	assert.Equal(t, "Company B", result.Content[1].Name.Get(i18n.LocaleRU))
+	assert.Equal(t, "Company C", result.Content[2].Name.Get(i18n.LocaleRU))
 
 	// Сортировка по дате начала DESC
 	req.Sort = []entityreqdecorator.SortBy{
@@ -539,9 +527,9 @@ func TestWorkHistoryRepo_List_Sorting(t *testing.T) {
 	result, err = repo.List(req)
 	require.NoError(t, err)
 	require.Len(t, result.Content, 3)
-	assert.Equal(t, "Company C", result.Content[0].Name) // 2022
-	assert.Equal(t, "Company B", result.Content[1].Name) // 2021
-	assert.Equal(t, "Company A", result.Content[2].Name) // 2020
+	assert.Equal(t, "Company C", result.Content[0].Name.Get(i18n.LocaleRU)) // 2022
+	assert.Equal(t, "Company B", result.Content[1].Name.Get(i18n.LocaleRU)) // 2021
+	assert.Equal(t, "Company A", result.Content[2].Name.Get(i18n.LocaleRU)) // 2020
 }
 
 func TestWorkHistoryRepo_ArrayFields(t *testing.T) {
@@ -550,26 +538,26 @@ func TestWorkHistoryRepo_ArrayFields(t *testing.T) {
 
 	// Тестируем работу с массивами
 	wh := models.WorkHistory{
-		Name:        "Array Test Company",
-		About:       "Testing arrays",
+		Name: newLocalizedText("Array Test Company"),
+		About: newLocalizedText("Testing arrays"),
 		PeriodStart: newPgDate(2020, time.January, 1),
-		WhatIDid: []string{
+		WhatIDid: newLocalizedStringList(
 			"Разработка микросервисов",
 			"Code review",
 			"Менторинг джуниоров",
 			"Написание документации",
-		},
-		Projects: []string{
+		),
+		Projects: newLocalizedStringList(
 			"Проект API Gateway",
 			"Проект миграции на Kubernetes",
 			"Внутренний инструмент мониторинга",
-		},
+		),
 	}
 
 	created, err := repo.Create(wh)
 	require.NoError(t, err)
-	assert.Len(t, created.WhatIDid, 4)
-	assert.Len(t, created.Projects, 3)
+	assert.Len(t, created.WhatIDid.Get(i18n.LocaleRU), 4)
+	assert.Len(t, created.Projects.Get(i18n.LocaleRU), 3)
 
 	// Проверяем получение
 	got, err := repo.Get(created.ID)
@@ -578,15 +566,15 @@ func TestWorkHistoryRepo_ArrayFields(t *testing.T) {
 	assert.Equal(t, wh.Projects, got.Projects)
 
 	// Проверяем обновление массивов
-	created.WhatIDid = []string{"New task 1", "New task 2"}
-	created.Projects = []string{"New project"}
+	created.WhatIDid = newLocalizedStringList("New task 1", "New task 2")
+	created.Projects = newLocalizedStringList("New project")
 
 	updated, err := repo.Update(created)
 	require.NoError(t, err)
-	assert.Len(t, updated.WhatIDid, 2)
-	assert.Len(t, updated.Projects, 1)
-	assert.Equal(t, "New task 1", updated.WhatIDid[0])
-	assert.Equal(t, "New project", updated.Projects[0])
+	assert.Len(t, updated.WhatIDid.Get(i18n.LocaleRU), 2)
+	assert.Len(t, updated.Projects.Get(i18n.LocaleRU), 1)
+	assert.Equal(t, "New task 1", updated.WhatIDid.Get(i18n.LocaleRU)[0])
+	assert.Equal(t, "New project", updated.Projects.Get(i18n.LocaleRU)[0])
 }
 
 func TestWorkHistoryRepo_ListWithTechnologies_EmptyDatabase(t *testing.T) {
@@ -598,7 +586,7 @@ func TestWorkHistoryRepo_ListWithTechnologies_EmptyDatabase(t *testing.T) {
 		Size: 10,
 	}
 
-	result, err := repo.ListWithTechnologies(req)
+	result, err := repo.ListWithTechnologies(req, i18n.LocaleRU)
 	require.NoError(t, err)
 	assert.Equal(t, 0, result.Total)
 	assert.Empty(t, result.Content)
@@ -612,23 +600,23 @@ func TestWorkHistoryRepo_ListWithTechnologies_WithoutTechnologies(t *testing.T) 
 
 	// Создаем записи истории работы без технологий
 	wh1, err := repo.Create(models.WorkHistory{
-		Name:        "Company A",
-		About:       "About A",
+		Name: newLocalizedText("Company A"),
+		About: newLocalizedText("About A"),
 		LogoUrl:     pgtype.Text{String: "https://example.com/a.png", Valid: true},
 		PeriodStart: newPgDate(2020, time.January, 1),
 		PeriodEnd:   newPgDate(2021, time.December, 31),
-		WhatIDid:    []string{"Task A1", "Task A2"},
-		Projects:    []string{"Project A"},
+		WhatIDid: newLocalizedStringList("Task A1", "Task A2"),
+		Projects: newLocalizedStringList("Project A"),
 	})
 	require.NoError(t, err)
 
 	wh2, err := repo.Create(models.WorkHistory{
-		Name:        "Company B",
-		About:       "About B",
+		Name: newLocalizedText("Company B"),
+		About: newLocalizedText("About B"),
 		PeriodStart: newPgDate(2022, time.March, 15),
 		PeriodEnd:   pgtype.Date{Valid: false},
-		WhatIDid:    []string{"Task B1"},
-		Projects:    []string{},
+		WhatIDid: newLocalizedStringList("Task B1"),
+		Projects: newLocalizedStringList(),
 	})
 	require.NoError(t, err)
 
@@ -637,7 +625,7 @@ func TestWorkHistoryRepo_ListWithTechnologies_WithoutTechnologies(t *testing.T) 
 		Size: 10,
 	}
 
-	result, err := repo.ListWithTechnologies(req)
+	result, err := repo.ListWithTechnologies(req, i18n.LocaleRU)
 	require.NoError(t, err)
 	assert.Equal(t, 2, result.Total)
 	assert.Len(t, result.Content, 2)
@@ -677,19 +665,19 @@ func TestWorkHistoryRepo_ListWithTechnologies_WithTechnologiesAndTags(t *testing
 
 	// Создаем теги
 	tag1, err := tagRepo.Create(models.Tag{
-		Name:     "Backend",
+		Name: newLocalizedText("Backend"),
 		HexColor: "#FF5733",
 	})
 	require.NoError(t, err)
 
 	tag2, err := tagRepo.Create(models.Tag{
-		Name:     "Database",
+		Name: newLocalizedText("Database"),
 		HexColor: "#33FF57",
 	})
 	require.NoError(t, err)
 
 	tag3, err := tagRepo.Create(models.Tag{
-		Name:     "Frontend",
+		Name: newLocalizedText("Frontend"),
 		HexColor: "#3357FF",
 	})
 	require.NoError(t, err)
@@ -697,14 +685,14 @@ func TestWorkHistoryRepo_ListWithTechnologies_WithTechnologiesAndTags(t *testing
 	// Создаем технологии
 	tech1, err := techRepo.Create(models.Technology{
 		Title:       "Go",
-		Description: pgtype.Text{String: "Programming language", Valid: true},
+		Description: newNullableLocalizedText("Programming language"),
 		LogoUrl:     pgtype.Text{String: "https://golang.org/logo.png", Valid: true},
 	})
 	require.NoError(t, err)
 
 	tech2, err := techRepo.Create(models.Technology{
 		Title:       "PostgreSQL",
-		Description: pgtype.Text{String: "Relational database", Valid: true},
+		Description: newNullableLocalizedText("Relational database"),
 		LogoUrl:     pgtype.Text{Valid: false},
 	})
 	require.NoError(t, err)
@@ -729,21 +717,21 @@ func TestWorkHistoryRepo_ListWithTechnologies_WithTechnologiesAndTags(t *testing
 
 	// Создаем историю работы
 	wh1, err := whRepo.Create(models.WorkHistory{
-		Name:        "Tech Company",
-		About:       "Full stack development",
+		Name: newLocalizedText("Tech Company"),
+		About: newLocalizedText("Full stack development"),
 		PeriodStart: newPgDate(2020, time.January, 1),
 		PeriodEnd:   newPgDate(2023, time.December, 31),
-		WhatIDid:    []string{"Backend", "Database design"},
-		Projects:    []string{"Project X"},
+		WhatIDid: newLocalizedStringList("Backend", "Database design"),
+		Projects: newLocalizedStringList("Project X"),
 	})
 	require.NoError(t, err)
 
 	wh2, err := whRepo.Create(models.WorkHistory{
-		Name:        "Startup",
-		About:       "Frontend development",
+		Name: newLocalizedText("Startup"),
+		About: newLocalizedText("Frontend development"),
 		PeriodStart: newPgDate(2024, time.January, 1),
-		WhatIDid:    []string{"UI development"},
-		Projects:    []string{},
+		WhatIDid: newLocalizedStringList("UI development"),
+		Projects: newLocalizedStringList(),
 	})
 	require.NoError(t, err)
 
@@ -762,7 +750,7 @@ func TestWorkHistoryRepo_ListWithTechnologies_WithTechnologiesAndTags(t *testing
 		Size: 10,
 	}
 
-	result, err := whRepo.ListWithTechnologies(req)
+	result, err := whRepo.ListWithTechnologies(req, i18n.LocaleRU)
 	require.NoError(t, err)
 	assert.Equal(t, 2, result.Total)
 	assert.Len(t, result.Content, 2)
@@ -818,11 +806,11 @@ func TestWorkHistoryRepo_ListWithTechnologies_Pagination(t *testing.T) {
 	// Создаем 5 записей истории работы
 	for i := 1; i <= 5; i++ {
 		_, err := repo.Create(models.WorkHistory{
-			Name:        fmt.Sprintf("Company %d", i),
-			About:       fmt.Sprintf("About %d", i),
+			Name: newLocalizedText(fmt.Sprintf("Company %d", i)),
+			About: newLocalizedText(fmt.Sprintf("About %d", i)),
 			PeriodStart: newPgDate(2020+i-1, time.January, 1),
-			WhatIDid:    []string{},
-			Projects:    []string{},
+			WhatIDid: newLocalizedStringList(),
+			Projects: newLocalizedStringList(),
 		})
 		require.NoError(t, err)
 	}
@@ -888,7 +876,7 @@ func TestWorkHistoryRepo_ListWithTechnologies_Pagination(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := repo.ListWithTechnologies(tt.req)
+			result, err := repo.ListWithTechnologies(tt.req, i18n.LocaleRU)
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantTotal, result.Total)
 			assert.Len(t, result.Content, tt.wantContent)
@@ -924,29 +912,29 @@ func TestWorkHistoryRepo_ListWithTechnologies_OrderPreservation(t *testing.T) {
 
 	// Создаем историю работы
 	wh1, err := whRepo.Create(models.WorkHistory{
-		Name:        "Company 1",
-		About:       "About 1",
+		Name: newLocalizedText("Company 1"),
+		About: newLocalizedText("About 1"),
 		PeriodStart: newPgDate(2020, time.January, 1),
-		WhatIDid:    []string{},
-		Projects:    []string{},
+		WhatIDid: newLocalizedStringList(),
+		Projects: newLocalizedStringList(),
 	})
 	require.NoError(t, err)
 
 	wh2, err := whRepo.Create(models.WorkHistory{
-		Name:        "Company 2",
-		About:       "About 2",
+		Name: newLocalizedText("Company 2"),
+		About: newLocalizedText("About 2"),
 		PeriodStart: newPgDate(2021, time.January, 1),
-		WhatIDid:    []string{},
-		Projects:    []string{},
+		WhatIDid: newLocalizedStringList(),
+		Projects: newLocalizedStringList(),
 	})
 	require.NoError(t, err)
 
 	wh3, err := whRepo.Create(models.WorkHistory{
-		Name:        "Company 3",
-		About:       "About 3",
+		Name: newLocalizedText("Company 3"),
+		About: newLocalizedText("About 3"),
 		PeriodStart: newPgDate(2022, time.January, 1),
-		WhatIDid:    []string{},
-		Projects:    []string{},
+		WhatIDid: newLocalizedStringList(),
+		Projects: newLocalizedStringList(),
 	})
 	require.NoError(t, err)
 
@@ -965,7 +953,7 @@ func TestWorkHistoryRepo_ListWithTechnologies_OrderPreservation(t *testing.T) {
 		Size: 10,
 	}
 
-	result, err := whRepo.ListWithTechnologies(req)
+	result, err := whRepo.ListWithTechnologies(req, i18n.LocaleRU)
 	require.NoError(t, err)
 	assert.Len(t, result.Content, 3)
 
@@ -987,17 +975,17 @@ func TestWorkHistoryRepo_ListWithTechnologies_TechnologyWithoutTags(t *testing.T
 	// Создаем технологию без тегов
 	tech, err := techRepo.Create(models.Technology{
 		Title:       "Standalone Tech",
-		Description: pgtype.Text{String: "No tags", Valid: true},
+		Description: newNullableLocalizedText("No tags"),
 	})
 	require.NoError(t, err)
 
 	// Создаем историю работы
 	wh, err := whRepo.Create(models.WorkHistory{
-		Name:        "Company",
-		About:       "About",
+		Name: newLocalizedText("Company"),
+		About: newLocalizedText("About"),
 		PeriodStart: newPgDate(2020, time.January, 1),
-		WhatIDid:    []string{},
-		Projects:    []string{},
+		WhatIDid: newLocalizedStringList(),
+		Projects: newLocalizedStringList(),
 	})
 	require.NoError(t, err)
 
@@ -1010,7 +998,7 @@ func TestWorkHistoryRepo_ListWithTechnologies_TechnologyWithoutTags(t *testing.T
 		Size: 10,
 	}
 
-	result, err := whRepo.ListWithTechnologies(req)
+	result, err := whRepo.ListWithTechnologies(req, i18n.LocaleRU)
 	require.NoError(t, err)
 	assert.Len(t, result.Content, 1)
 	assert.Len(t, result.Content[0].Technologies, 1)
@@ -1032,11 +1020,11 @@ func TestWorkHistoryRepo_SetTechnologies(t *testing.T) {
 	techRepo := NewTechnologyRepo(testDB)
 
 	wh, err := whRepo.Create(models.WorkHistory{
-		Name:        "Company",
-		About:       "About company",
+		Name: newLocalizedText("Company"),
+		About: newLocalizedText("About company"),
 		PeriodStart: newPgDate(2020, time.January, 1),
-		WhatIDid:    []string{},
-		Projects:    []string{},
+		WhatIDid: newLocalizedStringList(),
+		Projects: newLocalizedStringList(),
 	})
 	require.NoError(t, err)
 
@@ -1048,7 +1036,7 @@ func TestWorkHistoryRepo_SetTechnologies(t *testing.T) {
 	err = whRepo.SetTechnologies(wh.ID, []int64{tech1.ID, tech2.ID})
 	require.NoError(t, err)
 
-	withTech, err := whRepo.GetWithTechnologies(wh.ID)
+	withTech, err := whRepo.GetWithTechnologies(wh.ID, i18n.LocaleRU)
 	require.NoError(t, err)
 	require.Len(t, withTech.Technologies, 2)
 	assert.Equal(t, tech1.ID, withTech.Technologies[0].ID)
@@ -1057,7 +1045,7 @@ func TestWorkHistoryRepo_SetTechnologies(t *testing.T) {
 	err = whRepo.SetTechnologies(wh.ID, []int64{tech1.ID})
 	require.NoError(t, err)
 
-	withTech, err = whRepo.GetWithTechnologies(wh.ID)
+	withTech, err = whRepo.GetWithTechnologies(wh.ID, i18n.LocaleRU)
 	require.NoError(t, err)
 	require.Len(t, withTech.Technologies, 1)
 	assert.Equal(t, tech1.ID, withTech.Technologies[0].ID)
@@ -1065,7 +1053,7 @@ func TestWorkHistoryRepo_SetTechnologies(t *testing.T) {
 	err = whRepo.SetTechnologies(wh.ID, nil)
 	require.NoError(t, err)
 
-	withTech, err = whRepo.GetWithTechnologies(wh.ID)
+	withTech, err = whRepo.GetWithTechnologies(wh.ID, i18n.LocaleRU)
 	require.NoError(t, err)
 	assert.Empty(t, withTech.Technologies)
 }

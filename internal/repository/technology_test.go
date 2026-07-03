@@ -6,15 +6,12 @@ import (
 
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// newPgText создает pgtype.Text со значением
-func newPgText(s string) pgtype.Text {
-	return pgtype.Text{String: s, Valid: true}
-}
 
 func TestTechnologyRepo_Create(t *testing.T) {
 	cleanupTable(t, "technology")
@@ -29,7 +26,7 @@ func TestTechnologyRepo_Create(t *testing.T) {
 			name: "успешное создание технологии",
 			technology: models.Technology{
 				Title:       "Go",
-				Description: newPgText("Язык программирования Go"),
+				Description: newNullableLocalizedText("Язык программирования Go"),
 				LogoUrl:     newPgText("https://go.dev/logo.png"),
 			},
 			wantErr: false,
@@ -38,7 +35,7 @@ func TestTechnologyRepo_Create(t *testing.T) {
 			name: "успешное создание технологии без описания",
 			technology: models.Technology{
 				Title:       "Python",
-				Description: pgtype.Text{Valid: false},
+				Description: i18n.NullableLocalizedText{},
 				LogoUrl:     pgtype.Text{Valid: false},
 			},
 			wantErr: false,
@@ -70,14 +67,14 @@ func TestTechnologyRepo_Create_DuplicateTitle(t *testing.T) {
 	// Создаем первую технологию
 	_, err := repo.Create(models.Technology{
 		Title:       "Duplicate",
-		Description: newPgText("First"),
+		Description: newNullableLocalizedText("First"),
 	})
 	require.NoError(t, err)
 
 	// Пытаемся создать технологию с тем же названием
 	_, err = repo.Create(models.Technology{
 		Title:       "Duplicate",
-		Description: newPgText("Second"),
+		Description: newNullableLocalizedText("Second"),
 	})
 	require.Error(t, err, "должна быть ошибка при дублировании названия")
 }
@@ -89,7 +86,7 @@ func TestTechnologyRepo_Get(t *testing.T) {
 	// Создаем технологию для теста
 	created, err := repo.Create(models.Technology{
 		Title:       "TestTech",
-		Description: newPgText("Test Description"),
+		Description: newNullableLocalizedText("Test Description"),
 		LogoUrl:     newPgText("https://example.com/logo.png"),
 	})
 	require.NoError(t, err)
@@ -137,7 +134,7 @@ func TestTechnologyRepo_Update(t *testing.T) {
 	// Создаем технологию для теста
 	created, err := repo.Create(models.Technology{
 		Title:       "Original",
-		Description: newPgText("Original Description"),
+		Description: newNullableLocalizedText("Original Description"),
 		LogoUrl:     newPgText("https://original.com/logo.png"),
 	})
 	require.NoError(t, err)
@@ -152,7 +149,7 @@ func TestTechnologyRepo_Update(t *testing.T) {
 			technology: models.Technology{
 				ID:          created.ID,
 				Title:       "Updated",
-				Description: newPgText("Updated Description"),
+				Description: newNullableLocalizedText("Updated Description"),
 				LogoUrl:     newPgText("https://updated.com/logo.png"),
 			},
 			wantErr: false,
@@ -162,7 +159,7 @@ func TestTechnologyRepo_Update(t *testing.T) {
 			technology: models.Technology{
 				ID:          99999,
 				Title:       "NonExistent",
-				Description: newPgText("Desc"),
+				Description: newNullableLocalizedText("Desc"),
 			},
 			wantErr: true,
 		},
@@ -194,7 +191,7 @@ func TestTechnologyRepo_Delete(t *testing.T) {
 	// Создаем технологию для удаления
 	created, err := repo.Create(models.Technology{
 		Title:       "ToDelete",
-		Description: newPgText("Will be deleted"),
+		Description: newNullableLocalizedText("Will be deleted"),
 	})
 	require.NoError(t, err)
 
@@ -240,11 +237,11 @@ func TestTechnologyRepo_DeleteList(t *testing.T) {
 	repo := NewTechnologyRepo(testDB)
 
 	// Создаем несколько технологий
-	tech1, err := repo.Create(models.Technology{Title: "Tech1", Description: newPgText("Desc1")})
+	tech1, err := repo.Create(models.Technology{Title: "Tech1", Description: newNullableLocalizedText("Desc1")})
 	require.NoError(t, err)
-	tech2, err := repo.Create(models.Technology{Title: "Tech2", Description: newPgText("Desc2")})
+	tech2, err := repo.Create(models.Technology{Title: "Tech2", Description: newNullableLocalizedText("Desc2")})
 	require.NoError(t, err)
-	tech3, err := repo.Create(models.Technology{Title: "Tech3", Description: newPgText("Desc3")})
+	tech3, err := repo.Create(models.Technology{Title: "Tech3", Description: newNullableLocalizedText("Desc3")})
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -289,11 +286,11 @@ func TestTechnologyRepo_List(t *testing.T) {
 
 	// Создаем тестовые данные
 	technologies := []models.Technology{
-		{Title: "Angular", Description: newPgText("Frontend framework")},
-		{Title: "Docker", Description: newPgText("Container platform")},
-		{Title: "Express", Description: newPgText("Node.js framework")},
-		{Title: "Flask", Description: newPgText("Python framework")},
-		{Title: "Go", Description: newPgText("Programming language")},
+		{Title: "Angular", Description: newNullableLocalizedText("Frontend framework")},
+		{Title: "Docker", Description: newNullableLocalizedText("Container platform")},
+		{Title: "Express", Description: newNullableLocalizedText("Node.js framework")},
+		{Title: "Flask", Description: newNullableLocalizedText("Python framework")},
+		{Title: "Go", Description: newNullableLocalizedText("Programming language")},
 	}
 
 	for _, tech := range technologies {
@@ -362,9 +359,9 @@ func TestTechnologyRepo_List_WithFilter(t *testing.T) {
 	repo := NewTechnologyRepo(testDB)
 
 	// Создаем тестовые данные
-	_, err := repo.Create(models.Technology{Title: "Golang", Description: newPgText("Backend")})
+	_, err := repo.Create(models.Technology{Title: "Golang", Description: newNullableLocalizedText("Backend")})
 	require.NoError(t, err)
-	_, err = repo.Create(models.Technology{Title: "React", Description: newPgText("Frontend")})
+	_, err = repo.Create(models.Technology{Title: "React", Description: newNullableLocalizedText("Frontend")})
 	require.NoError(t, err)
 
 	// Фильтрация по названию
@@ -390,11 +387,11 @@ func TestTechnologyRepo_List_Sorting(t *testing.T) {
 	repo := NewTechnologyRepo(testDB)
 
 	// Создаем тестовые данные в определенном порядке
-	_, err := repo.Create(models.Technology{Title: "Zebra", Description: newPgText("Last")})
+	_, err := repo.Create(models.Technology{Title: "Zebra", Description: newNullableLocalizedText("Last")})
 	require.NoError(t, err)
-	_, err = repo.Create(models.Technology{Title: "Alpha", Description: newPgText("First")})
+	_, err = repo.Create(models.Technology{Title: "Alpha", Description: newNullableLocalizedText("First")})
 	require.NoError(t, err)
-	_, err = repo.Create(models.Technology{Title: "Middle", Description: newPgText("Middle")})
+	_, err = repo.Create(models.Technology{Title: "Middle", Description: newNullableLocalizedText("Middle")})
 	require.NoError(t, err)
 
 	// Сортировка по названию ASC
@@ -429,15 +426,15 @@ func TestTechnologyRepo_ListWithTags_PaginationWithMultipleTagsPerTech(t *testin
 	techRepo := NewTechnologyRepo(testDB)
 	tagRepo := NewTagRepo(testDB)
 
-	tag1, err := tagRepo.Create(models.Tag{Name: "Backend", HexColor: "#111111"})
+	tag1, err := tagRepo.Create(models.Tag{Name: newLocalizedText("Backend"), HexColor: "#111111"})
 	require.NoError(t, err)
-	tag2, err := tagRepo.Create(models.Tag{Name: "Language", HexColor: "#222222"})
+	tag2, err := tagRepo.Create(models.Tag{Name: newLocalizedText("Language"), HexColor: "#222222"})
 	require.NoError(t, err)
 
 	for i := 1; i <= 8; i++ {
 		tech, createErr := techRepo.Create(models.Technology{
 			Title:       fmt.Sprintf("Tech%d", i),
-			Description: newPgText(fmt.Sprintf("Description %d", i)),
+			Description: newNullableLocalizedText(fmt.Sprintf("Description %d", i)),
 		})
 		require.NoError(t, createErr)
 		require.NoError(t, techRepo.SetTags(tech.ID, []int64{tag1.ID, tag2.ID}))
@@ -446,7 +443,7 @@ func TestTechnologyRepo_ListWithTags_PaginationWithMultipleTagsPerTech(t *testin
 	result, err := techRepo.ListWithTags(entityreqdecorator.PagebleRq{
 		Page: 1,
 		Size: 10,
-	})
+	}, i18n.LocaleRU)
 	require.NoError(t, err)
 	assert.Equal(t, 8, result.Total)
 	assert.Len(t, result.Content, 8, "LIMIT должен применяться к технологиям, а не к строкам JOIN")
@@ -463,9 +460,9 @@ func TestTechnologyRepo_ListWithTags_PaginationPages(t *testing.T) {
 	techRepo := NewTechnologyRepo(testDB)
 	tagRepo := NewTagRepo(testDB)
 
-	tag1, err := tagRepo.Create(models.Tag{Name: "Common", HexColor: "#abcdef"})
+	tag1, err := tagRepo.Create(models.Tag{Name: newLocalizedText("Common"), HexColor: "#abcdef"})
 	require.NoError(t, err)
-	tag2, err := tagRepo.Create(models.Tag{Name: "Extra", HexColor: "#fedcba"})
+	tag2, err := tagRepo.Create(models.Tag{Name: newLocalizedText("Extra"), HexColor: "#fedcba"})
 	require.NoError(t, err)
 
 	for i := 1; i <= 5; i++ {
@@ -476,21 +473,21 @@ func TestTechnologyRepo_ListWithTags_PaginationPages(t *testing.T) {
 		require.NoError(t, techRepo.SetTags(tech.ID, []int64{tag1.ID, tag2.ID}))
 	}
 
-	page1, err := techRepo.ListWithTags(entityreqdecorator.PagebleRq{Page: 1, Size: 2})
+	page1, err := techRepo.ListWithTags(entityreqdecorator.PagebleRq{Page: 1, Size: 2}, i18n.LocaleRU)
 	require.NoError(t, err)
 	assert.Equal(t, 5, page1.Total)
 	assert.Len(t, page1.Content, 2)
 	assert.Equal(t, int64(1), page1.Content[0].ID)
 	assert.Equal(t, int64(2), page1.Content[1].ID)
 
-	page2, err := techRepo.ListWithTags(entityreqdecorator.PagebleRq{Page: 2, Size: 2})
+	page2, err := techRepo.ListWithTags(entityreqdecorator.PagebleRq{Page: 2, Size: 2}, i18n.LocaleRU)
 	require.NoError(t, err)
 	assert.Equal(t, 5, page2.Total)
 	assert.Len(t, page2.Content, 2)
 	assert.Equal(t, int64(3), page2.Content[0].ID)
 	assert.Equal(t, int64(4), page2.Content[1].ID)
 
-	page3, err := techRepo.ListWithTags(entityreqdecorator.PagebleRq{Page: 3, Size: 2})
+	page3, err := techRepo.ListWithTags(entityreqdecorator.PagebleRq{Page: 3, Size: 2}, i18n.LocaleRU)
 	require.NoError(t, err)
 	assert.Equal(t, 5, page3.Total)
 	assert.Len(t, page3.Content, 1)
@@ -503,7 +500,7 @@ func TestTechnologyRepo_ListWithTags_SizeZeroReturnsAll(t *testing.T) {
 	techRepo := NewTechnologyRepo(testDB)
 	tagRepo := NewTagRepo(testDB)
 
-	tag, err := tagRepo.Create(models.Tag{Name: "Tag", HexColor: "#000000"})
+	tag, err := tagRepo.Create(models.Tag{Name: newLocalizedText("Tag"), HexColor: "#000000"})
 	require.NoError(t, err)
 
 	for i := 1; i <= 3; i++ {
@@ -512,7 +509,7 @@ func TestTechnologyRepo_ListWithTags_SizeZeroReturnsAll(t *testing.T) {
 		require.NoError(t, techRepo.SetTags(tech.ID, []int64{tag.ID}))
 	}
 
-	result, err := techRepo.ListWithTags(entityreqdecorator.PagebleRq{Page: 1, Size: 0})
+	result, err := techRepo.ListWithTags(entityreqdecorator.PagebleRq{Page: 1, Size: 0}, i18n.LocaleRU)
 	require.NoError(t, err)
 	assert.Equal(t, 3, result.Total)
 	assert.Len(t, result.Content, 3)
@@ -529,15 +526,15 @@ func TestTechnologyRepo_SetTags(t *testing.T) {
 	tech, err := techRepo.Create(models.Technology{Title: "Go"})
 	require.NoError(t, err)
 
-	tag1, err := tagRepo.Create(models.Tag{Name: "Backend", HexColor: "#111111"})
+	tag1, err := tagRepo.Create(models.Tag{Name: newLocalizedText("Backend"), HexColor: "#111111"})
 	require.NoError(t, err)
-	tag2, err := tagRepo.Create(models.Tag{Name: "Language", HexColor: "#222222"})
+	tag2, err := tagRepo.Create(models.Tag{Name: newLocalizedText("Language"), HexColor: "#222222"})
 	require.NoError(t, err)
 
 	err = techRepo.SetTags(tech.ID, []int64{tag1.ID, tag2.ID})
 	require.NoError(t, err)
 
-	withTags, err := techRepo.GetWithTags(tech.ID)
+	withTags, err := techRepo.GetWithTags(tech.ID, i18n.LocaleRU)
 	require.NoError(t, err)
 	require.Len(t, withTags.Tags, 2)
 	assert.Equal(t, tag1.ID, withTags.Tags[0].ID)
@@ -546,7 +543,7 @@ func TestTechnologyRepo_SetTags(t *testing.T) {
 	err = techRepo.SetTags(tech.ID, []int64{tag1.ID})
 	require.NoError(t, err)
 
-	withTags, err = techRepo.GetWithTags(tech.ID)
+	withTags, err = techRepo.GetWithTags(tech.ID, i18n.LocaleRU)
 	require.NoError(t, err)
 	require.Len(t, withTags.Tags, 1)
 	assert.Equal(t, tag1.ID, withTags.Tags[0].ID)
@@ -554,7 +551,7 @@ func TestTechnologyRepo_SetTags(t *testing.T) {
 	err = techRepo.SetTags(tech.ID, nil)
 	require.NoError(t, err)
 
-	withTags, err = techRepo.GetWithTags(tech.ID)
+	withTags, err = techRepo.GetWithTags(tech.ID, i18n.LocaleRU)
 	require.NoError(t, err)
 	assert.Empty(t, withTags.Tags)
 }

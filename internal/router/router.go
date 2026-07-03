@@ -24,6 +24,7 @@ import (
 	models "github.com/Maxim-Ba/cv-backend/internal/models/gen"
 	"github.com/Maxim-Ba/cv-backend/internal/services"
 	"github.com/Maxim-Ba/cv-backend/internal/view/components/pages"
+	"github.com/Maxim-Ba/cv-backend/pkg/i18n"
 	entityreqdecorator "github.com/Maxim-Ba/cv-backend/pkg/entity-req-decorator"
 )
 
@@ -62,7 +63,7 @@ func New(deps *Dependencies, db *sql.DB, allowedOrigin, adminUser, adminPass, ap
 	corsMiddleware := cors.Handler(cors.Options{
 		AllowedOrigins:   []string{allowedOrigin, "http://localhost:3333"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowedHeaders:   []string{"Accept", "Accept-Language", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           300,
@@ -107,6 +108,8 @@ func New(deps *Dependencies, db *sql.DB, allowedOrigin, adminUser, adminPass, ap
 			r.Post("/education", router.adminEducationPost)
 			r.Get("/about-me", router.adminAboutMe)
 			r.Post("/about-me", router.adminAboutMePost)
+			r.Get("/hero", router.adminHero)
+			r.Post("/hero", router.adminHeroPost)
 		})
 	})
 
@@ -116,7 +119,9 @@ func New(deps *Dependencies, db *sql.DB, allowedOrigin, adminUser, adminPass, ap
 	r.Get("/api/download-cv", h.PDFHandler.DownloadCV)
 
 	r.Route("/api", func(r chi.Router) {
+		r.Use(m.LocaleMiddleware)
 		r.Use(cacheControlMiddleware)
+		r.Get("/hero", h.HeroHandler.HeroGet)
 		r.Route("/tag", func(r chi.Router) {
 			r.Get("/{tagID}", h.TagHandler.TagGet)
 			r.Get("/", h.TagHandler.TagList)
@@ -169,6 +174,7 @@ type handlers struct {
 	EducationHandler   *EducationHandler
 	WorkHistoryHandler *WorkHistoryHandler
 	AboutMeHandler     *AboutMeHandler
+	HeroHandler        *HeroHandler
 	PDFHandler         *PDFHandler
 }
 
@@ -178,6 +184,7 @@ func createHandlers(deps *Dependencies) *handlers {
 	educationHandler := NewEducationHandler(deps.EducationService)
 	workHistoryHandler := NewWorkHistoryHandler(deps.WorkHistoryService)
 	aboutMeHandler := NewAboutMeHandler(deps.ProfileService)
+	heroHandler := NewHeroHandler(deps.ProfileService)
 	pdfHandler := newPDFHandler(deps.PDFService)
 
 	return &handlers{
@@ -186,6 +193,7 @@ func createHandlers(deps *Dependencies) *handlers {
 		EducationHandler:   educationHandler,
 		WorkHistoryHandler: workHistoryHandler,
 		AboutMeHandler:     aboutMeHandler,
+		HeroHandler:        heroHandler,
 		PDFHandler:         pdfHandler,
 	}
 }
@@ -205,6 +213,7 @@ func cacheControlMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			w.Header().Set("Cache-Control", "public, max-age=300, stale-while-revalidate=60")
+			w.Header().Set("Vary", "Accept-Language")
 		} else {
 			w.Header().Set("Cache-Control", "no-store")
 		}
@@ -302,7 +311,7 @@ func (rt *Router) adminTagPost(w http.ResponseWriter, r *http.Request) {
 		id, _ := strconv.ParseInt(idStr, 10, 64)
 		tag := models.Tag{
 			ID:       id,
-			Name:     r.FormValue("name"),
+			Name:     i18n.ParseFormLocalized(r, "name"),
 			HexColor: r.FormValue("hexColor"),
 		}
 		if _, err := rt.Deps.TagService.Update(tag); err != nil {
@@ -310,7 +319,7 @@ func (rt *Router) adminTagPost(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		tag := models.Tag{
-			Name:     r.FormValue("name"),
+			Name:     i18n.ParseFormLocalized(r, "name"),
 			HexColor: r.FormValue("hexColor"),
 		}
 		if _, err := rt.Deps.TagService.Create(tag); err != nil {
@@ -326,7 +335,7 @@ func (rt *Router) adminTech(w http.ResponseWriter, r *http.Request) {
 	user := "Администратор"
 	queryParams := r.URL.Query()
 	pagebleRq := entityreqdecorator.ParseQueryParams(queryParams)
-	techResult, err := rt.Deps.TechService.ListWithTags(pagebleRq)
+	techResult, err := rt.Deps.TechService.ListWithTags(pagebleRq, i18n.LocaleRU)
 	if err != nil {
 		slog.Error(err.Error())
 	}
@@ -345,7 +354,7 @@ func (rt *Router) adminTech(w http.ResponseWriter, r *http.Request) {
 		id, convErr := strconv.ParseInt(editID, 10, 64)
 		if convErr == nil {
 			editTech, _ = rt.Deps.TechService.Get(id)
-			techWithTags, getErr := rt.Deps.TechService.GetWithTags(id)
+			techWithTags, getErr := rt.Deps.TechService.GetWithTags(id, i18n.LocaleRU)
 			if getErr == nil {
 				for _, tag := range techWithTags.Tags {
 					selectedTagIDs[tag.ID] = true
@@ -400,8 +409,8 @@ func (rt *Router) adminTechPost(w http.ResponseWriter, r *http.Request) {
 		tech := models.Technology{
 			ID:          id,
 			Title:       r.FormValue("title"),
-			Description: pgtype.Text{String: r.FormValue("description"), Valid: true},
-			LogoUrl:     pgtype.Text{String: r.FormValue("logoUrl"), Valid: true},
+			Description: technologyDescriptionFromForm(r),
+			LogoUrl:     pgtype.Text{String: r.FormValue("logoUrl"), Valid: r.FormValue("logoUrl") != ""},
 		}
 		if _, err := rt.Deps.TechService.Update(tech); err != nil {
 			slog.Error(err.Error())
@@ -411,8 +420,8 @@ func (rt *Router) adminTechPost(w http.ResponseWriter, r *http.Request) {
 	default:
 		tech := models.Technology{
 			Title:       r.FormValue("title"),
-			Description: pgtype.Text{String: r.FormValue("description"), Valid: true},
-			LogoUrl:     pgtype.Text{String: r.FormValue("logoUrl"), Valid: true},
+			Description: technologyDescriptionFromForm(r),
+			LogoUrl:     pgtype.Text{String: r.FormValue("logoUrl"), Valid: r.FormValue("logoUrl") != ""},
 		}
 		created, err := rt.Deps.TechService.Create(tech)
 		if err != nil {
@@ -469,25 +478,14 @@ func (rt *Router) adminEducationPost(w http.ResponseWriter, r *http.Request) {
 		id, _ := strconv.ParseInt(idStr, 10, 64)
 		yearStr := r.FormValue("year")
 		year, _ := strconv.Atoi(yearStr)
-		edu := models.Education{
-			ID:           id,
-			Name:         pgtype.Text{String: r.FormValue("name"), Valid: true},
-			Year:         int32(year),
-			Course:       r.FormValue("course"),
-			Organization: r.FormValue("organization"),
-		}
+		edu := educationFromForm(r, id, int32(year))
 		if _, err := rt.Deps.EducationService.Update(edu); err != nil {
 			slog.Error(err.Error())
 		}
 	default:
 		yearStr := r.FormValue("year")
 		year, _ := strconv.Atoi(yearStr)
-		edu := models.Education{
-			Name:         pgtype.Text{String: r.FormValue("name"), Valid: true},
-			Year:         int32(year),
-			Course:       r.FormValue("course"),
-			Organization: r.FormValue("organization"),
-		}
+		edu := educationFromForm(r, 0, int32(year))
 		if _, err := rt.Deps.EducationService.Create(edu); err != nil {
 			slog.Error(err.Error())
 		}
@@ -501,7 +499,7 @@ func (rt *Router) admiHistory(w http.ResponseWriter, r *http.Request) {
 	user := "Администратор"
 	queryParams := r.URL.Query()
 	pagebleRq := entityreqdecorator.ParseQueryParams(queryParams)
-	whResult, err := rt.Deps.WorkHistoryService.ListWithTechnologies(pagebleRq)
+	whResult, err := rt.Deps.WorkHistoryService.ListWithTechnologies(pagebleRq, i18n.LocaleRU)
 	if err != nil {
 		slog.Error(err.Error())
 	}
@@ -520,7 +518,7 @@ func (rt *Router) admiHistory(w http.ResponseWriter, r *http.Request) {
 		id, convErr := strconv.ParseInt(editID, 10, 64)
 		if convErr == nil {
 			editWH, _ = rt.Deps.WorkHistoryService.Get(id)
-			whWithTech, getErr := rt.Deps.WorkHistoryService.GetWithTechnologies(id)
+			whWithTech, getErr := rt.Deps.WorkHistoryService.GetWithTechnologies(id, i18n.LocaleRU)
 			if getErr == nil {
 				for _, tech := range whWithTech.Technologies {
 					selectedTechnologyIDs[tech.ID] = true
@@ -573,18 +571,12 @@ func (rt *Router) adminHistoryPost(w http.ResponseWriter, r *http.Request) {
 		idStr := r.FormValue("id")
 		id, _ := strconv.ParseInt(idStr, 10, 64)
 		logoUrlPut := r.FormValue("logoUrl")
-		jobTitlePut := r.FormValue("jobTitle")
-		wh := models.WorkHistory{
+		wh := workHistoryFromForm(r, models.WorkHistory{
 			ID:          id,
-			Name:        r.FormValue("name"),
-			JobTitle:    pgtype.Text{String: jobTitlePut, Valid: jobTitlePut != ""},
-			About:       r.FormValue("about"),
 			LogoUrl:     pgtype.Text{String: logoUrlPut, Valid: logoUrlPut != ""},
 			PeriodStart: parseDate(r.FormValue("periodStart")),
 			PeriodEnd:   parseDate(r.FormValue("periodEnd")),
-			WhatIDid:    parseLines(r.FormValue("whatIDid")),
-			Projects:    parseLines(r.FormValue("projects")),
-		}
+		})
 		if _, err := rt.Deps.WorkHistoryService.Update(wh); err != nil {
 			slog.Error(err.Error())
 		} else if err := rt.Deps.WorkHistoryService.SetTechnologies(id, technologyIDs); err != nil {
@@ -592,17 +584,11 @@ func (rt *Router) adminHistoryPost(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		logoUrlPost := r.FormValue("logoUrl")
-		jobTitlePost := r.FormValue("jobTitle")
-		wh := models.WorkHistory{
-			Name:        r.FormValue("name"),
-			JobTitle:    pgtype.Text{String: jobTitlePost, Valid: jobTitlePost != ""},
-			About:       r.FormValue("about"),
+		wh := workHistoryFromForm(r, models.WorkHistory{
 			LogoUrl:     pgtype.Text{String: logoUrlPost, Valid: logoUrlPost != ""},
 			PeriodStart: parseDate(r.FormValue("periodStart")),
 			PeriodEnd:   parseDate(r.FormValue("periodEnd")),
-			WhatIDid:    parseLines(r.FormValue("whatIDid")),
-			Projects:    parseLines(r.FormValue("projects")),
-		}
+		})
 		created, err := rt.Deps.WorkHistoryService.Create(wh)
 		if err != nil {
 			slog.Error(err.Error())
@@ -617,7 +603,7 @@ func (rt *Router) adminHistoryPost(w http.ResponseWriter, r *http.Request) {
 
 func (rt *Router) adminAboutMe(w http.ResponseWriter, r *http.Request) {
 	user := "Администратор"
-	aboutMe, err := rt.Deps.ProfileService.GetAboutMe()
+	profile, _, err := rt.Deps.ProfileService.GetAboutMeAdmin()
 	if err != nil {
 		slog.Error(err.Error())
 	}
@@ -626,11 +612,28 @@ func (rt *Router) adminAboutMe(w http.ResponseWriter, r *http.Request) {
 		slog.Error(err.Error())
 	}
 	selectedTechnologyIDs := map[int64]bool{}
-	for _, tech := range aboutMe.Technologies {
-		selectedTechnologyIDs[tech.ID] = true
+	techIDs, err := rt.Deps.ProfileService.GetTechnologyIDsForAdmin()
+	if err == nil {
+		for _, id := range techIDs {
+			selectedTechnologyIDs[id] = true
+		}
 	}
 	csrfToken := csrf.Token(r)
-	component := pages.AboutMePage(user, aboutMe, allTechResult.Content, selectedTechnologyIDs, csrfToken)
+
+	aboutText := i18n.LocalizedText{}
+	noteText := i18n.LocalizedText{}
+	hobbiesText := i18n.LocalizedText{}
+	if profile.About.Valid {
+		aboutText = profile.About.Text
+	}
+	if profile.Note.Valid {
+		noteText = profile.Note.Text
+	}
+	if profile.Hobbies.Valid {
+		hobbiesText = profile.Hobbies.Text
+	}
+
+	component := pages.AboutMePage(user, aboutText, noteText, hobbiesText, allTechResult.Content, selectedTechnologyIDs, csrfToken)
 	component.Render(r.Context(), w)
 }
 
@@ -641,13 +644,41 @@ func (rt *Router) adminAboutMePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	input := services.UpdateAboutMeInput{
-		About:         r.FormValue("about"),
-		Note:          r.FormValue("note"),
-		Hobbies:       r.FormValue("hobbies"),
+		About:         localizedFromForm(r, "about"),
+		Note:          localizedFromForm(r, "note"),
+		Hobbies:       localizedFromForm(r, "hobbies"),
 		TechnologyIDs: parseTechnologyIDs(r),
 	}
 	if err := rt.Deps.ProfileService.UpdateAboutMe(input); err != nil {
 		slog.Error(err.Error())
 	}
 	http.Redirect(w, r, "/admin/about-me", http.StatusSeeOther)
+}
+
+func (rt *Router) adminHero(w http.ResponseWriter, r *http.Request) {
+	user := "Администратор"
+	profile, err := rt.Deps.ProfileService.GetProfile()
+	if err != nil {
+		slog.Error(err.Error())
+	}
+	csrfToken := csrf.Token(r)
+	component := pages.HeroPage(user, profile, csrfToken)
+	component.Render(r.Context(), w)
+}
+
+func (rt *Router) adminHeroPost(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	input := services.UpdateHeroInput{
+		Greeting: localizedFromForm(r, "greeting"),
+		FullName: localizedFromForm(r, "fullName"),
+		Title:    localizedFromForm(r, "title"),
+		Pitch:    localizedFromForm(r, "pitch"),
+	}
+	if err := rt.Deps.ProfileService.UpdateHero(input); err != nil {
+		slog.Error(err.Error())
+	}
+	http.Redirect(w, r, "/admin/hero", http.StatusSeeOther)
 }
