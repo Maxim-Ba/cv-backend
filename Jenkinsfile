@@ -5,6 +5,7 @@ pipeline {
     IMAGE = "3224142123/cv-backend"
     DEPLOY = "cv-backend"
     NS = "cv-portfolio"
+    HEALTH_URL = "https://cv.balashov-maxim.ru/healthz"
   }
 
   stages {
@@ -37,6 +38,12 @@ pipeline {
             kubectl rollout status deployment/${DEPLOY} -n ${NS}
           """
         }
+      }
+    }
+
+    stage('Verify') {
+      steps {
+        sh 'curl -sf ${HEALTH_URL} | grep -q \'"status":"ok"\''
       }
     }
   }

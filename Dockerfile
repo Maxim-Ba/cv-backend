@@ -1,6 +1,6 @@
 FROM golang:1.25-alpine
 
-RUN go install github.com/air-verse/air@latest && \
+RUN go install github.com/air-verse/air@v1.67.1 && \
   go install github.com/go-delve/delve/cmd/dlv@latest && \
   go install github.com/a-h/templ/cmd/templ@latest
 
