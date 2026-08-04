@@ -5,7 +5,6 @@ pipeline {
     IMAGE = "3224142123/cv-backend"
     DEPLOY = "cv-backend"
     NS = "cv-portfolio"
-    HEALTH_URL = "https://cv.balashov-maxim.ru/healthz"
   }
 
   stages {
@@ -43,7 +42,13 @@ pipeline {
 
     stage('Verify') {
       steps {
-        sh 'curl -sf ${HEALTH_URL} | grep -q \'"status":"ok"\''
+        withKubeConfig([credentialsId: 'kubeconfig']) {
+          sh '''
+            kubectl run cv-backend-verify --rm -i --restart=Never \
+              --image=curlimages/curl -n ${NS} -- \
+              curl -sf http://cv-backend:3333/healthz | grep -q '"status":"ok"'
+          '''
+        }
       }
     }
   }
