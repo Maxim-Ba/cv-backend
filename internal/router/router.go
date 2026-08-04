@@ -17,6 +17,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/gorilla/csrf"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/jackc/pgx/v5/pgtype"
 	httpSwagger "github.com/swaggo/http-swagger"
 
@@ -115,6 +116,7 @@ func New(deps *Dependencies, db *sql.DB, allowedOrigin, adminUser, adminPass, ap
 
 	r.Get("/swagger/*", httpSwagger.WrapHandler)
 	r.Get("/healthz", router.healthCheck)
+	r.Handle("/metrics", promhttp.Handler())
 
 	r.Get("/api/download-cv", h.PDFHandler.DownloadCV)
 

@@ -6,8 +6,8 @@ services:
     working_dir: /src
     command: generate
 
-  postgres:
-    container_name: postgres
+  postgres-app:
+    container_name: postgres-app
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: postgres
@@ -42,7 +42,7 @@ services:
       - AIR_WORKDIR=/app
       - AIR_TMPDIR=/app/tmp
       - SERVER_ADDRESS=0.0.0.0:3333
-      - POSTGRES_HOST=postgres
+      - POSTGRES_HOST=postgres-app
       - POSTGRES_PORT=5432
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -55,7 +55,7 @@ services:
       - APP_ENV=development
 
     depends_on:
-      postgres:
+      postgres-app:
         condition: service_healthy
     networks:
       - app-network

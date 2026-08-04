@@ -16,6 +16,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/Maxim-Ba/cv-backend/config"
 	_ "github.com/Maxim-Ba/cv-backend/docs"
@@ -24,6 +25,8 @@ import (
 	"github.com/Maxim-Ba/cv-backend/internal/router"
 	"github.com/Maxim-Ba/cv-backend/internal/services"
 	"github.com/Maxim-Ba/cv-backend/pkg/logger"
+	"github.com/Maxim-Ba/cv-backend/pkg/telemetry"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func main() {
@@ -37,6 +40,19 @@ func main() {
 	cfg := config.GetConfig()
 	fmt.Printf("Config: %+v\n", cfg)
 	logger.InitLogger(cfg)
+
+	tp, err := telemetry.InitTracer(ctx)
+	if err != nil {
+		log.Panicf("tracer init: %v", err)
+	}
+	defer func() {
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer shutdownCancel()
+		if err := telemetry.Shutdown(shutdownCtx, tp); err != nil {
+			slog.Error("tracer shutdown failed", "error", err)
+		}
+	}()
+
 	db, err := dbconn.New(*cfg)
 
 	if err != nil {
@@ -48,8 +64,10 @@ func main() {
 	}
 	var wg sync.WaitGroup
 	server := &http.Server{
-		Addr:    cfg.ServerAddr,
-		Handler: router.R,
+		Addr: cfg.ServerAddr,
+		Handler: otelhttp.NewHandler(router.R, "cv-backend",
+			otelhttp.WithFilter(telemetry.TraceFilter),
+		),
 	}
 
 	wg.Add(1)
